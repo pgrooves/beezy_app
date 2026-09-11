@@ -7,6 +7,16 @@
  * reusable becomes a token in src/theme/tokens.ts, never a literal here.
  */
 
+/*
+ * The boot fallback in index.html is only for a page served without its
+ * bundle. This stylesheet ships *with* the bundle and is render-blocking, so
+ * hiding it here means it never appears in a healthy deployment, not even as
+ * a flash. See index.html and docs/DECISIONS.md#0010.
+ */
+#boot-fallback {
+  display: none;
+}
+
 html {
   /* Tell the UA to render form controls and scrollbars for the active scheme. */
   color-scheme: light dark;
