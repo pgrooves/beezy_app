@@ -1,0 +1,136 @@
+@import 'tailwindcss';
+@import './theme/fonts.css';
+@import './theme/tokens.css';
+
+/*
+ * Base layer only. Component styling lives with the components; anything
+ * reusable becomes a token in src/theme/tokens.ts, never a literal here.
+ */
+
+html {
+  /* Tell the UA to render form controls and scrollbars for the active scheme. */
+  color-scheme: light dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+  -webkit-font-smoothing: antialiased;
+  /* Standalone apps should not rubber-band like a web page. */
+  overscroll-behavior-y: none;
+}
+
+/* Prices, invoices and reporting align on the decimal. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* All-caps section label, echoing the site's voice. Never over four words. */
+.eyebrow {
+  font-size: var(--text-eyebrow-size);
+  line-height: var(--text-eyebrow-leading);
+  letter-spacing: var(--text-eyebrow-tracking);
+  font-weight: var(--text-eyebrow-weight);
+  text-transform: uppercase;
+}
+
+/* Safe-area helpers. viewport-fit=cover means we owe the insets back. */
+.pad-top-safe {
+  padding-top: max(var(--space-lg), env(safe-area-inset-top));
+}
+.pad-bottom-safe {
+  padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
+}
+
+/*
+ * Liquid Glass. Used by the nav capsule and sheets from Phase 2 onward;
+ * defined here so the degradation rules live in one place.
+ */
+.glass {
+  background: var(--c-glass);
+  backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
+  border: 1px solid var(--c-glass-stroke);
+  box-shadow: var(--shadow-nav);
+}
+
+/* Specular highlight along the top rim. */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--c-glass-specular) 30%,
+    var(--c-glass-specular) 70%,
+    transparent
+  );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Reduce Transparency: solid surface, no blur. Required by the brief. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--c-glass-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .glass::before {
+    display: none;
+  }
+}
+
+/* Browsers without backdrop-filter get the solid surface too, never a
+   see-through box with no blur. */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass {
+    background: var(--c-glass-solid);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Every interactive element clears the 44pt minimum. */
+button,
+a[role='button'],
+[role='tab'] {
+  min-height: var(--layout-tap-target);
+  font-family: inherit;
+}
+
+/* The text-safe gold, not the bright fill: WCAG 1.4.11 wants 3:1 for a focus
+   indicator against what surrounds it, and the bright champagne is 2.15:1 on
+   the light background. */
+:focus-visible {
+  outline: 2px solid var(--c-accent-text);
+  outline-offset: 2px;
+}

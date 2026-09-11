@@ -1,0 +1,17 @@
+node_modules
+dist
+dev-dist
+*.local
+.DS_Store
+
+# Local env. Nothing secret belongs here either — the repo is public and the
+# client bundle ships whatever VITE_* holds. See docs/DECISIONS.md#0003.
+.env
+.env.*
+!.env.example
+
+# Generated from src/theme/tokens.ts by `npm run tokens`.
+src/theme/tokens.css
+
+# Local screenshot output from `npm run shots`.
+shots
