@@ -257,6 +257,50 @@ when the source is set to a branch.
 
 ---
 
+## 0011 — The Pages base path is derived from the repo name, never typed
+
+**Date:** 2026-09-11 · **Status:** Active
+
+**Context.** The base path was written by hand as `/Beezy_App/`, matching how
+the project is capitalised in prose. The repository is `beezy_app`. GitHub
+Pages serves a project site at `/<repo>/` and **those paths are
+case-sensitive**, so the deployed `index.html` asked for
+`/Beezy_App/assets/index-*.js` on a site rooted at `/beezy_app/`. Both the
+script and the stylesheet 404'd.
+
+That produced the 0010 fallback screen on a deployment where the Pages source
+was already set correctly and the build had in fact shipped — so the fallback
+named a cause that was not the real one. Every layer agreed with itself and
+was wrong together: the base fed the manifest `scope`, `start_url` and the
+service worker scope, so `check:pwa` validated a self-consistent build, and
+the Lighthouse job copied `dist/` into `site/Beezy_App/` before auditing it.
+CI was green and the deploy job reported success.
+
+**Decision.** `vite.config.ts` derives the base from `GITHUB_REPOSITORY`
+(`/${repo}/`), falling back to `/beezy_app/` for local builds. `BASE_PATH`
+still overrides it for the eventual custom domain. The Lighthouse job takes
+its directory from `github.event.repository.name` rather than a typed literal,
+so the audited layout cannot disagree with the built one.
+
+`scripts/check-pwa.mjs` asserts the manifest `scope` equals `/<repo>/`
+whenever `GITHUB_REPOSITORY` is set and `BASE_PATH` is not. This is the check
+that would have caught the bug: it is the only one that compares the build
+against something outside itself.
+
+**Why a check and not just a fix.** The failure is invisible to every
+self-consistent test — the build, the PWA audit and the deploy all pass. Only
+a comparison against the real repository name can fail.
+
+**Verified** by building with `BASE_PATH=/Beezy_App/` and confirming
+`check:pwa` exits non-zero naming the mismatch, then building normally and
+loading the result in a browser under `/beezy_app/`: the app mounts, the boot
+fallback is absent from the DOM, and no request 404s.
+
+**Revisit if** we move to a custom domain, where the base becomes `/` and the
+repo-name check is skipped by the `BASE_PATH` override.
+
+---
+
 ## Open — Outbound email sending domain
 
 **Date:** 2026-09-11 · **Status:** Blocked, needed by Phase 4
@@ -273,7 +317,7 @@ order:
 1. Get DNS access to `beezynola.com` from whoever registered it (likely
    Brandon, via Squarespace). Cheapest and best for brand continuity.
 2. Register a dedicated domain for the app (~$12/yr) and send from there.
-   Also gives us a custom Pages domain, which removes the `/Beezy_App/`
+   Also gives us a custom Pages domain, which removes the `/beezy_app/`
    base path.
 3. A provider offering single-sender verification without DNS. Works, but
    deliverability is materially worse and it cannot be fixed later without

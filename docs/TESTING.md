@@ -10,10 +10,10 @@ find.
 Safari has no install button, so this is manual. It takes about fifteen
 seconds.
 
-1. Open **https://pgrooves.github.io/Beezy_App/** in **Safari**. Chrome and
+1. Open **https://pgrooves.github.io/beezy_app/** in **Safari**. Chrome and
    Firefox on iOS cannot install to the Home Screen — it has to be Safari.
-   (Capital B and A. The URL usually works in lowercase too, but that is the
-   canonical one.)
+   (All lower-case. GitHub Pages URLs are case-sensitive, so a capitalised
+   `Beezy_App` is a 404, not a redirect.)
 2. Tap the **Share** button in the toolbar (square with an arrow pointing up).
 3. Scroll down and tap **Add to Home Screen**.
 4. Tap **Add**.

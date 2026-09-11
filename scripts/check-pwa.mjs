@@ -86,6 +86,21 @@ if (manifest) {
 
   if (manifest.start_url?.startsWith(base)) ok('start_url is inside scope');
   else fail('start_url is inside scope', `${manifest.start_url} vs ${base}`);
+
+  // Pages serves a project site at /<repo>/ and those paths are
+  // case-sensitive, so a base that differs from the repository name even in
+  // case makes every asset 404 while the deploy job reports success. Skipped
+  // when BASE_PATH is set, which is the deliberate custom-domain override.
+  const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1];
+  if (process.env.BASE_PATH) {
+    ok(`base path overridden (BASE_PATH=${process.env.BASE_PATH})`);
+  } else if (!repoName) {
+    ok('base path matches repo name (skipped: no GITHUB_REPOSITORY)');
+  } else if (base === `/${repoName}/`) {
+    ok(`base path matches repo name (${base})`);
+  } else {
+    fail('base path matches repo name', `scope ${base} vs /${repoName}/ — Pages paths are case-sensitive`);
+  }
 }
 
 // --- service worker --------------------------------------------------------

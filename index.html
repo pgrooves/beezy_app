@@ -45,13 +45,20 @@
         healthy deployment — not even as a flash, because that stylesheet is
         render-blocking.
 
-        It becomes visible in exactly one situation: something served this
-        file without the built bundle. That is what GitHub Pages does when its
-        source is set to "Deploy from a branch" — it publishes the repository
-        root, where the script below points at /src/main.tsx, which exists
-        only as source and 404s when served. The page would otherwise render
-        as a silent black rectangle, which reads as an application bug rather
-        than a one-setting misconfiguration.
+        It becomes visible when the bundle this page references did not load.
+        Two causes have actually produced it, and the browser's network tab
+        tells them apart:
+
+        1. The script tag points at /src/main.tsx — GitHub Pages published the
+           repository root rather than dist/, which is what "Deploy from a
+           branch" does. That entry exists only as source and 404s when served.
+        2. The script tag points at a built /assets/ file that 404s — the base
+           path does not match the repository name. Pages paths are
+           case-sensitive, so /Beezy_App/ against the repo `beezy_app` misses
+           every asset while the deploy job still reports success.
+
+        The page would otherwise render as a silent black rectangle, which
+        reads as an application bug rather than a misconfiguration.
       -->
       <div id="boot-fallback">
         <h1>Beezy isn&rsquo;t loaded</h1>
@@ -59,12 +66,14 @@
           This page was served without its application bundle, so nothing could start.
         </p>
         <p>
-          The usual cause is GitHub Pages publishing the repository root instead of the
-          build. Fix it under <strong>Settings &rarr; Pages &rarr; Build and deployment</strong>
-          by setting <strong>Source</strong> to <strong>GitHub Actions</strong>, then
-          re-run the latest workflow.
+          Open the browser&rsquo;s network tab and find the failing script. If it points at
+          <strong>/src/main.tsx</strong>, GitHub Pages is publishing the repository root:
+          set <strong>Settings &rarr; Pages &rarr; Build and deployment &rarr; Source</strong>
+          to <strong>GitHub Actions</strong> and re-run the latest workflow. If it points at
+          a built <strong>/assets/</strong> file that 404s, the base path does not match the
+          repository name &mdash; Pages paths are case-sensitive.
         </p>
-        <p class="muted">docs/DECISIONS.md &middot; 0010</p>
+        <p class="muted">docs/DECISIONS.md &middot; 0010, 0011</p>
       </div>
     </div>
     <style>

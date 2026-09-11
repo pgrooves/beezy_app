@@ -6,7 +6,7 @@ import { copyFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
- * GitHub Pages does no SPA rewriting: a deep link like /Beezy_App/book is a
+ * GitHub Pages does no SPA rewriting: a deep link like /beezy_app/book is a
  * plain 404, and that is what a tester gets when they reopen the installed app
  * on any route but the root. Pages does serve 404.html for unmatched paths, so
  * shipping a copy of index.html under that name hands control to the client
@@ -24,11 +24,17 @@ function pagesSpaFallback(): Plugin {
 }
 
 /**
- * GitHub Pages serves this repo at /Beezy_App/, so every asset URL, the
+ * GitHub Pages serves a project site at /<repo>/, so every asset URL, the
  * service worker scope, and the manifest start_url must carry that prefix.
+ *
+ * Those paths are case-sensitive. A hand-written '/Beezy_App/' against the
+ * repository `beezy_app` makes every asset 404 while the deploy job still
+ * reports success — see docs/DECISIONS.md#0011. Derive it from
+ * GITHUB_REPOSITORY instead, so the prefix cannot drift from the repo name.
  * Override with BASE_PATH=/ when serving from a custom domain later.
  */
-const base = process.env.BASE_PATH ?? '/Beezy_App/';
+const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1];
+const base = process.env.BASE_PATH ?? (repoName ? `/${repoName}/` : '/beezy_app/');
 
 /**
  * Surfaced in the UI so a tester reporting a bug can say which build they are

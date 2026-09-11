@@ -9,7 +9,8 @@ Two experiences behind one login: a customer app for booking, garage and
 gallery, and an admin/tech portal for the day's jobs, schedule, clients and
 reporting. Role is resolved at auth time and determines the entire shell.
 
-**Beta:** installable PWA at **https://pgrooves.github.io/Beezy_App/**
+**Beta:** installable PWA at **https://pgrooves.github.io/beezy_app/**
+(lower-case — Pages URLs are case-sensitive)
 **Later:** App Store and Google Play, from this same codebase.
 
 > **Repository setting this depends on.** Pages **Source** must be
@@ -19,6 +20,11 @@ reporting. Role is resolved at auth time and determines the entire shell.
 > entry and its `/src/main.tsx` never resolves when served. If you see a black
 > page and a `pages build and deployment` run in the Actions tab, that is the
 > cause. See [DECISIONS.md#0010](docs/DECISIONS.md).
+>
+> **The base path is derived, not typed.** Pages serves this site at
+> `/<repo>/` and those paths are case-sensitive, so the build takes its base
+> from `GITHUB_REPOSITORY`. Do not hard-code it — a mismatch 404s every asset
+> while CI stays green. See [DECISIONS.md#0011](docs/DECISIONS.md).
 
 ---
 
@@ -111,7 +117,7 @@ See [`docs/DECISIONS.md`](docs/DECISIONS.md) for why.
 | [TESTING.md](docs/TESTING.md) | How testers install, what to check, how to report |
 
 Privacy policy: [`public/privacy.html`](public/privacy.html), served at
-`/Beezy_App/privacy.html`.
+`/beezy_app/privacy.html`.
 
 ---
 
