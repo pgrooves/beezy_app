@@ -83,9 +83,13 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 
       - name: Serve and audit
+        # Mirror the real Pages layout — the site lives under /Beezy_App/, and
+        # serving dist at the root would make every audited URL a 404.
         run: |
-          npx --yes serve -s dist -l 4173 &
-          npx --yes wait-on http://localhost:4173 -t 30000
+          mkdir -p site/Beezy_App
+          cp -r dist/. site/Beezy_App/
+          npx --yes serve site -l 4173 &
+          npx --yes wait-on http://localhost:4173/Beezy_App/ -t 60000
           npx --yes @lhci/cli@0.14.x autorun
         env:
           LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.ref_name }}
