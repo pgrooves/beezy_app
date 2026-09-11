@@ -15,3 +15,6 @@ src/theme/tokens.css
 
 # Local screenshot output from `npm run shots`.
 shots
+
+# TypeScript incremental build cache.
+*.tsbuildinfo
