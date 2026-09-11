@@ -1,0 +1,140 @@
+/**
+ * Validates the built PWA in dist/.
+ *
+ * Lighthouse removed its PWA category in v12, so `installable-manifest`,
+ * `service-worker`, `maskable-icon`, `apple-touch-icon` and `themed-omnibox`
+ * no longer exist as audits. Rather than pin CI to an end-of-life Lighthouse,
+ * we assert the invariants directly — which is more precise anyway, because it
+ * checks the things that actually break installation on a tester's phone and
+ * names the exact file when one is missing.
+ *
+ * Run: npm run check:pwa   (after npm run build)
+ */
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+const DIST = 'dist';
+const problems = [];
+const checks = [];
+
+const ok = (label) => checks.push(`  ok   ${label}`);
+const fail = (label, detail) => {
+  problems.push(`${label}${detail ? ` — ${detail}` : ''}`);
+  checks.push(`  FAIL ${label}${detail ? ` — ${detail}` : ''}`);
+};
+
+function read(path) {
+  const full = join(DIST, path);
+  return existsSync(full) ? readFileSync(full, 'utf8') : null;
+}
+
+// --- manifest --------------------------------------------------------------
+
+const manifestRaw = read('manifest.webmanifest');
+let manifest = null;
+if (!manifestRaw) {
+  fail('manifest.webmanifest exists');
+} else {
+  try {
+    manifest = JSON.parse(manifestRaw);
+    ok('manifest.webmanifest parses');
+  } catch (err) {
+    fail('manifest.webmanifest parses', err.message);
+  }
+}
+
+if (manifest) {
+  // Without these a browser will not offer to install the app at all.
+  for (const field of ['name', 'short_name', 'start_url', 'scope', 'display', 'icons']) {
+    if (manifest[field]) ok(`manifest.${field}`);
+    else fail(`manifest.${field} is set`);
+  }
+
+  if (manifest.display === 'standalone') ok('display is standalone');
+  else fail('display is standalone', `found "${manifest.display}"`);
+
+  // Both are required for the splash screen and the OS chrome to match.
+  for (const field of ['theme_color', 'background_color']) {
+    if (manifest[field]) ok(`manifest.${field}`);
+    else fail(`manifest.${field} is set`);
+  }
+
+  const icons = manifest.icons ?? [];
+  for (const size of ['192x192', '512x512']) {
+    if (icons.some((i) => i.sizes === size)) ok(`icon ${size} declared`);
+    else fail(`icon ${size} declared`, 'required for installability');
+  }
+
+  // Android crops icons to a circle; without a maskable icon it crops the
+  // square one and clips the artwork.
+  const maskable = icons.filter((i) => i.purpose === 'maskable');
+  if (maskable.length) ok(`maskable icons declared (${maskable.length})`);
+  else fail('a maskable icon is declared');
+
+  // A declared icon that 404s is worse than none: the install prompt fails
+  // silently. Check every one actually shipped.
+  const base = manifest.scope ?? '/';
+  let missing = 0;
+  for (const icon of icons) {
+    const rel = icon.src.startsWith(base) ? icon.src.slice(base.length) : icon.src.replace(/^\//, '');
+    if (!existsSync(join(DIST, rel))) {
+      fail(`icon file present: ${icon.src}`);
+      missing++;
+    }
+  }
+  if (!missing) ok(`all ${icons.length} declared icon files exist`);
+
+  if (manifest.start_url?.startsWith(base)) ok('start_url is inside scope');
+  else fail('start_url is inside scope', `${manifest.start_url} vs ${base}`);
+}
+
+// --- service worker --------------------------------------------------------
+
+if (read('sw.js')) ok('service worker emitted');
+else fail('sw.js exists');
+
+// --- index.html ------------------------------------------------------------
+
+const html = read('index.html');
+if (!html) {
+  fail('index.html exists');
+} else {
+  const expectations = [
+    [/rel="apple-touch-icon"/, 'apple-touch-icon link (iOS Home Screen icon)'],
+    [/name="theme-color"[^>]*prefers-color-scheme:\s*light/, 'theme-color for light'],
+    [/name="theme-color"[^>]*prefers-color-scheme:\s*dark/, 'theme-color for dark'],
+    [/viewport-fit=cover/, 'viewport-fit=cover (safe-area support)'],
+    [/name="apple-mobile-web-app-capable"/, 'apple-mobile-web-app-capable'],
+    [/rel="manifest"/, 'manifest link'],
+  ];
+  for (const [re, label] of expectations) {
+    if (re.test(html)) ok(label);
+    else fail(label);
+  }
+
+  // The beta is a closed test on a public URL.
+  if (/name="robots"[^>]*noindex/.test(html)) ok('noindex (remove before launch)');
+  else fail('noindex is set', 'the beta must stay out of search');
+
+  const appleIcon = read('icons/apple-touch-icon.png');
+  if (appleIcon !== null) ok('apple-touch-icon file exists');
+  else fail('apple-touch-icon file exists');
+}
+
+// --- SPA fallback ----------------------------------------------------------
+
+// GitHub Pages does no SPA rewriting; without this, every deep link 404s.
+const notFound = read('404.html');
+if (notFound === null) fail('404.html exists', 'deep links will 404 on Pages');
+else if (notFound === html) ok('404.html matches index.html (SPA fallback)');
+else fail('404.html matches index.html', 'stale copy');
+
+// --- report ----------------------------------------------------------------
+
+console.log(checks.join('\n'));
+if (problems.length) {
+  console.error(`\n${problems.length} PWA check(s) failed:`);
+  for (const p of problems) console.error(`  - ${p}`);
+  process.exit(1);
+}
+console.log(`\nall ${checks.length} PWA checks passed`);

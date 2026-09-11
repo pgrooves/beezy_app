@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "shots": "node scripts/screenshot.mjs",
-    "fonts": "node scripts/fetch-fonts.mjs"
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "check:pwa": "node scripts/check-pwa.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

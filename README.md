@@ -12,6 +12,14 @@ reporting. Role is resolved at auth time and determines the entire shell.
 **Beta:** installable PWA at **https://pgrooves.github.io/Beezy_App/**
 **Later:** App Store and Google Play, from this same codebase.
 
+> **Repository setting this depends on.** Pages **Source** must be
+> **GitHub Actions** (Settings → Pages → Build and deployment). On *Deploy
+> from a branch* GitHub publishes the repo root instead of `dist/`, and the
+> site renders as a blank black page — the root `index.html` is Vite's dev
+> entry and its `/src/main.tsx` never resolves when served. If you see a black
+> page and a `pages build and deployment` run in the Actions tab, that is the
+> cause. See [DECISIONS.md#0010](docs/DECISIONS.md).
+
 ---
 
 ## Status

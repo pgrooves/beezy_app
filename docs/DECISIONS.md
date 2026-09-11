@@ -206,6 +206,57 @@ explains why they exist.
 
 ---
 
+## 0009 — PWA installability is asserted directly, not via Lighthouse
+
+**Date:** 2026-09-11 · **Status:** Active
+
+**Context.** CI asserted the Lighthouse audits `installable-manifest`,
+`service-worker`, `maskable-icon`, `apple-touch-icon` and `themed-omnibox`.
+The first real CI run failed all five with *"is not a known audit"* — Lighthouse
+removed its PWA category in v12, and those audits no longer exist. The app was
+fine; the config was asserting against a deleted API.
+
+**Decision.** Do not pin CI to an end-of-life Lighthouse to keep a deprecated
+category alive. Instead `scripts/check-pwa.mjs` asserts the invariants against
+the built `dist/` directly, and Lighthouse keeps doing what it is still good
+at — performance, accessibility (an error gate at 0.95), best practices.
+
+The direct check is better than the audit it replaces: it verifies that every
+icon the manifest *declares* actually shipped (a declared icon that 404s makes
+the install prompt fail silently), that `start_url` is inside `scope`, and that
+`404.html` matches `index.html` for the Pages SPA fallback — none of which the
+old audit covered. It names the exact missing file when it fails.
+
+**Verified** by deliberately breaking the manifest and confirming the script
+fails with the right messages and a non-zero exit.
+
+---
+
+## 0010 — Pages must deploy from Actions, never from a branch
+
+**Date:** 2026-09-11 · **Status:** Active
+
+**Context.** With the repository's Pages source set to *Deploy from a branch*,
+GitHub runs its own `pages build and deployment` workflow that publishes the
+**repository root**. The root contains Vite's development `index.html`, which
+references `/src/main.tsx` — a file that exists only in source form and 404s
+when served. The result is a mounted-nothing page: no CSS, an empty `#root`,
+and `color-scheme: light dark` painting it black in a dark-mode browser.
+
+That is precisely what the first live load showed, while the app's own deploy
+job reported success — two deployment mechanisms writing to the same site.
+
+**Decision.** The Pages source must be **GitHub Actions**. This is a
+repository setting, not a file, so it cannot be enforced in the repo; it is
+recorded here and in the README so the symptom is diagnosable in seconds next
+time rather than mistaken for an application bug.
+
+**Symptom to recognise:** a black or blank page at the Pages URL, plus a
+`pages build and deployment` run in the Actions tab. That workflow only exists
+when the source is set to a branch.
+
+---
+
 ## Open — Outbound email sending domain
 
 **Date:** 2026-09-11 · **Status:** Blocked, needed by Phase 4
