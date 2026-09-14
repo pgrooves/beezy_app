@@ -516,19 +516,9 @@ export const PHOTOS: Photo[] = [
     published: true,
   },
 
-];
 
-/**
- * Real jobs from Beezy's camera, already watermarked. Waiting on the image
- * files: the sources belong in `assets/brand-src/photos/` under these exact
- * names, after which `npm run brand` generates them and this list gets spread
- * into PHOTOS above.
- *
- * They are held out rather than referenced early because a fixture pointing at
- * a file that was never added ships a gallery of broken tiles —
- * `npm run check:assets` fails the build on exactly that.
- */
-export const PENDING_WORK_PHOTOS: Photo[] = [
+  // Real jobs, shot and watermarked by Beezy. `caption` names the car rather
+  // than the service, because that is what someone scrolling recognises.
   {
     id: 'ph-work-impala',
     kind: 'after',
@@ -548,21 +538,13 @@ export const PENDING_WORK_PHOTOS: Photo[] = [
     published: true,
   },
   {
-    id: 'ph-work-sierra',
-    kind: 'after',
-    url: photo('work-sierra-at4.webp'),
-    capturedAt: at(-19),
-    serviceSlug: 'luxe-wash',
-    caption: 'GMC Sierra AT4',
-    published: true,
-  },
-  {
     id: 'ph-work-mclaren-doors',
     kind: 'after',
     url: photo('work-mclaren-doors.webp'),
     capturedAt: at(-8),
     serviceSlug: 'ceramic-coating',
-    caption: 'McLaren GT',
+    // Two shots of the same car, so the captions have to tell them apart.
+    caption: 'McLaren GT · doors up',
     published: true,
   },
   {
@@ -572,6 +554,27 @@ export const PENDING_WORK_PHOTOS: Photo[] = [
     capturedAt: at(-8),
     serviceSlug: 'ceramic-coating',
     caption: 'McLaren GT',
+    published: true,
+  },
+];
+
+/**
+ * Still waiting on its source file. The lifted Sierra did not make it into the
+ * upload; drop it into `assets/brand-src/photos/` (any format), run
+ * `npm run brand`, and move this entry up into PHOTOS.
+ *
+ * Held out rather than referenced early because a fixture pointing at a file
+ * that was never added ships a broken tile — `npm run check:assets` fails the
+ * build on exactly that.
+ */
+export const PENDING_WORK_PHOTOS: Photo[] = [
+  {
+    id: 'ph-work-sierra',
+    kind: 'after',
+    url: photo('work-sierra-at4.webp'),
+    capturedAt: at(-19),
+    serviceSlug: 'luxe-wash',
+    caption: 'GMC Sierra AT4',
     published: true,
   },
 ];

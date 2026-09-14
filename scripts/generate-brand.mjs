@@ -242,18 +242,28 @@ async function main() {
   // ---- Photography ---------------------------------------------------------
   // Squarespace serves 1500px originals. Free-tier storage and a phone on
   // cellular both care, so cap the long edge and cut a thumbnail for grids.
-  const photos = readdirSync(SRC_PHOTOS).filter((f) => f.endsWith('.webp'));
+  // Accept whatever comes off a phone — jpg, png, heic — and always emit
+  // webp. Filtering on '.webp' alone silently skipped every real upload.
+  const photos = readdirSync(SRC_PHOTOS).filter((f) =>
+    /\.(webp|jpe?g|png|heic|heif)$/i.test(f),
+  );
   ensure(out(PHOTOS, 'x'));
   for (const name of photos) {
     const src = out(SRC_PHOTOS, name);
+    const stem = name.replace(/\.[^.]+$/, '');
+    // rotate() applies the EXIF orientation: a photo shot in portrait on a
+    // phone is often stored landscape with a rotation flag, and dropping it
+    // lands the car on its side.
     await sharp(src)
+      .rotate()
       .resize({ width: PHOTO_WIDTH, withoutEnlargement: true })
       .webp({ quality: 76 })
-      .toFile(out(PHOTOS, name));
+      .toFile(out(PHOTOS, `${stem}.webp`));
     await sharp(src)
+      .rotate()
       .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
       .webp({ quality: 70 })
-      .toFile(out(PHOTOS, name.replace(/\.webp$/, '.thumb.webp')));
+      .toFile(out(PHOTOS, `${stem}.thumb.webp`));
   }
   console.log(`  photos: ${photos.length} full + thumbnails`);
 }
