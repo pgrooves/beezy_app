@@ -120,11 +120,11 @@ export const radius = {
 
 export const type = {
   /**
-   * Display face. The wordmark is a high-contrast Didone, so headings use a
-   * serif to match it rather than the grotesque the brief first assumed.
-   * See docs/DECISIONS.md#0004.
+   * Display face. A light art-deco geometric, set against the Didone
+   * wordmark rather than imitating it — the mark stays the ornamental
+   * element and the headings get out of its way. See docs/DECISIONS.md#0016.
    */
-  display: "'Playfair Display', 'Didot', 'Bodoni MT', Georgia, serif",
+  display: "'Josefin Sans', 'Futura', 'Century Gothic', sans-serif",
   /** UI and body. */
   body: "'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   /** Prices, invoices, reporting. Tabular figures, always. */
@@ -133,9 +133,20 @@ export const type = {
 
 /** size / lineHeight / letterSpacing / weight, in px except tracking (em). */
 export const textStyle = {
-  displayLg: { size: 40, leading: 44, tracking: 0.01, weight: 500 },
-  displayMd: { size: 32, leading: 38, tracking: 0.01, weight: 500 },
-  displaySm: { size: 24, leading: 30, tracking: 0.01, weight: 500 },
+  /**
+   * Mixed case, for headings that carry a sentence. Josefin runs small for
+   * its point size, so these sit a little larger than a grotesque would.
+   */
+  displayLg: { size: 38, leading: 44, tracking: 0, weight: 300 },
+  displayMd: { size: 30, leading: 36, tracking: 0, weight: 300 },
+  displaySm: { size: 23, leading: 29, tracking: 0, weight: 300 },
+  /**
+   * Screen titles only. Caps need generous tracking and tighter leading than
+   * mixed case, and they are deliberately NOT used for longer headings: caps
+   * everywhere flattens the hierarchy against the eyebrow labels, which are
+   * already uppercase.
+   */
+  displayCaps: { size: 26, leading: 30, tracking: 0.09, weight: 300 },
   /** All-caps section labels. Wide tracking, echoing the site's voice. */
   eyebrow: { size: 12, leading: 16, tracking: 0.18, weight: 600 },
   bodyLg: { size: 17, leading: 26, tracking: 0, weight: 400 },

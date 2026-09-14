@@ -62,8 +62,29 @@ body {
   letter-spacing: -0.01em;
 }
 
+/*
+ * Display face, mixed case. Josefin is a light art-deco geometric, so it
+ * needs the weight stated explicitly — inheriting a bolder weight from a
+ * heading element loses the whole character of it.
+ */
 .font-display {
   font-family: var(--font-display);
+  font-weight: 300;
+}
+
+/*
+ * Screen titles. Caps and wide tracking, and used ONLY here: applying it to
+ * every heading would put screen titles, section labels and card headings in
+ * the same treatment at different sizes, which flattens the hierarchy —
+ * the eyebrow labels are already uppercase.
+ */
+.display-caps {
+  font-family: var(--font-display);
+  font-size: var(--text-display-caps-size);
+  line-height: var(--text-display-caps-leading);
+  letter-spacing: var(--text-display-caps-tracking);
+  font-weight: var(--text-display-caps-weight);
+  text-transform: uppercase;
 }
 
 /* All-caps section label, echoing the site's voice. Never over four words. */

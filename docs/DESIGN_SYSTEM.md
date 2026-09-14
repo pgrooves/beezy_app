@@ -48,15 +48,31 @@ near-white on dark, so it stays the highest-contrast element either way.
 
 | Role | Face | Notes |
 |---|---|---|
-| Display / headings | Playfair Display | Didone, matching the wordmark (DECISIONS.md#0004) |
+| Display / headings | Josefin Sans 300 | Light art-deco geometric (DECISIONS.md#0016) |
 | Body / UI | Inter Tight | Sentence case, generous leading |
 | Numerals | Inter Tight, tabular | Prices, invoices, reporting — always |
 
-**All-caps is a style, not a default.** The `.eyebrow` class carries the
-site's voice — 12px, 0.18em tracking, uppercase — and is used for section
-labels and button text. Never all-caps for anything over four words.
+**Three uppercase treatments, and they are not interchangeable.**
 
-Prices always use `.tabular` so columns align on the decimal.
+- `.eyebrow` — 12px, 0.18em tracking. Section labels and button text.
+- `.display-caps` — 26px, 0.09em tracking. **Screen titles only.**
+- Every other heading in the display face stays **mixed case**.
+
+That last rule is the one that matters. Caps on every heading puts screen
+titles, section labels and card headings into one treatment at three sizes and
+the hierarchy collapses, because `.eyebrow` is already uppercase. So a screen
+is titled `GARAGE`, but the vehicle on it is "2023 Porsche Macan" and the
+booking step asks "Show me the car".
+
+Record names — a client, a vehicle — stay mixed case at any size. A person's
+name set in caps reads as shouting.
+
+Screen titles wrap rather than truncate: caps at this tracking are wide, and a
+title like "Business settings" will not fit beside the brand mark on one line
+at phone width. A two-line header beats a clipped title.
+
+Prices use `.money` — the numeric face at heading scale. The display face has
+no tabular figures, so a column of prices set in it will not align.
 
 ---
 

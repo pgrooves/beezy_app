@@ -23,7 +23,9 @@ const CSS_OUT = 'src/theme/fonts.css';
 // another file a phone downloads.
 const FAMILIES = [
   'Inter+Tight:wght@400;500;600;700',
-  'Playfair+Display:wght@500;600',
+  // Display face. 300 is the design weight; 400 is kept for the few places a
+  // heading sits on a photo, where 300 disappears into a light background.
+  'Josefin+Sans:wght@300;400',
 ];
 
 // Asking as a modern browser gets woff2 with unicode-range subsets.

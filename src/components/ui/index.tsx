@@ -70,9 +70,11 @@ export function ScreenHeader({
       <div className="flex items-end justify-between gap-[var(--space-lg)]">
         <div className="min-w-0 flex-1">
           {eyebrow && <p className="eyebrow truncate text-[var(--c-ink-subtle)]">{eyebrow}</p>}
-          <h1 className="font-display mt-[var(--space-xs)] truncate text-[32px] leading-[38px]">
-            {title}
-          </h1>
+          {/* Wraps rather than truncates: caps at this tracking are wide, and
+              a title like "Business settings" does not fit beside the mark on
+              one line at phone width. A clipped title is worse than a tall
+              header. */}
+          <h1 className="display-caps mt-[var(--space-xs)]">{title}</h1>
         </div>
         {brand && <BrandMark />}
       </div>

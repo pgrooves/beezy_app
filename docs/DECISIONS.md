@@ -83,7 +83,7 @@ and it is safe *only* because row-level security enforces access. Therefore:
 
 ## 0004 — Display type is a serif, not the grotesque the brief assumed
 
-**Date:** 2026-09-11 · **Status:** Active
+**Date:** 2026-09-11 · **Status:** Superseded by 0016
 
 **Context.** §3 of the brief specified "a tight geometric or grotesque sans in
 uppercase" for display type. The actual wordmark is a high-contrast Didone
@@ -388,6 +388,41 @@ rather than the app's `404.html`, and the tour's original "is the page nearly
 empty" check was loose enough to let that pass as a rendered screen. The tour
 now asserts `#root` actually mounted, and the local server runs with a rewrite
 that mirrors what Pages does. A test that cannot fail is worse than no test.
+
+---
+
+## 0016 — Display face is Josefin Sans 300, and caps are rationed
+
+**Date:** 2026-09-14 · **Status:** Active · Supersedes 0004
+
+**Context.** Playfair read cheap in place. The reasoning in 0004 was right
+about the pairing logic and wrong about the conclusion: free Didones have
+clumsy thick/thin transitions at display sizes, and setting one *underneath* a
+Didone wordmark made the headings compete with the mark rather than support it.
+
+**Decision.** Josefin Sans 300 — a light art-deco geometric. It contrasts with
+the wordmark instead of imitating it, which is the standard luxury pairing: the
+mark stays the ornamental element and the headings get out of its way. Chosen
+from a rendered comparison of fourteen faces across two rounds
+(`scripts/font-trial.mjs`), judged in the real app rather than as specimens.
+
+**Caps are rationed to screen titles.** `.display-caps` is 26px at 0.09em and
+is used for the screen title and nothing else; longer headings stay mixed case.
+Uppercase everywhere would put screen titles, section labels and card headings
+into one treatment at three sizes and flatten the hierarchy, since `.eyebrow`
+is already uppercase. Record names stay mixed case at any size.
+
+Screen titles wrap rather than truncate — verified across every admin screen:
+no overlap with the brand mark, no horizontal overflow, tallest header 135px.
+
+**A note on the trial that produced this.** The first two rounds were invalid.
+Google-hosted fonts registered no faces in this environment, so every candidate
+rendered as the same fallback and only the per-candidate weight and tracking
+differed; two shots came out byte-identical, which is what gave it away.
+`document.fonts.check()` had returned true for all of them. The harness now
+self-hosts each candidate and measures rendered text width against the generic
+fallback, because an API that reports success for a font that never loaded is
+worse than no check at all.
 
 ---
 
