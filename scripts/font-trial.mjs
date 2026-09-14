@@ -7,12 +7,11 @@
  *
  * Usage: node scripts/font-trial.mjs <baseUrl> <outDir>
  */
-import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
+import { launchChromium, assertGlassComposites } from './lib/browser.mjs';
 
 const baseUrl = (process.argv[2] ?? 'http://localhost:4182/beezy_app/').replace(/\/$/, '');
 const outDir = process.argv[3] ?? '/tmp/fonts';
-const executablePath = process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium';
 
 /**
  * Candidates, all Google-hosted so the trial needs no local files.
@@ -110,7 +109,8 @@ const SCREENS = [
 ];
 
 mkdirSync(outDir, { recursive: true });
-const browser = await chromium.launch({ executablePath });
+const browser = await launchChromium();
+await assertGlassComposites(browser);
 
 for (const font of CANDIDATES) {
   const context = await browser.newContext({

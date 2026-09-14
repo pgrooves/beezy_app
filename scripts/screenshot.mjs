@@ -13,16 +13,16 @@
  *
  * Needs a Chromium. Set CHROMIUM_PATH if it is not on the default path.
  */
-import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
+import { launchChromium, assertGlassComposites } from './lib/browser.mjs';
 
 const url = process.argv[2] ?? 'http://localhost:4173/';
 const outDir = process.argv[3] ?? 'shots';
-const executablePath = process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium';
 
 mkdirSync(outDir, { recursive: true });
 
-const browser = await chromium.launch({ executablePath });
+const browser = await launchChromium();
+await assertGlassComposites(browser);
 let failed = false;
 
 for (const colorScheme of ['light', 'dark']) {

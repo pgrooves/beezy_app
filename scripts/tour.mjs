@@ -9,12 +9,11 @@
  *   npm run build && npx serve site -l 4173   # site/<repo>/ mirrors Pages
  *   node scripts/tour.mjs http://localhost:4173/beezy_app/ ./shots
  */
-import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
+import { launchChromium, assertGlassComposites } from './lib/browser.mjs';
 
 const baseUrl = (process.argv[2] ?? 'http://localhost:4173/beezy_app/').replace(/\/$/, '');
 const outDir = process.argv[3] ?? 'shots';
-const executablePath = process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium';
 const only = process.env.ONLY;
 
 /** role is applied before load, so guarded routes resolve. */
@@ -47,7 +46,10 @@ const SCREENS = [
 ];
 
 mkdirSync(outDir, { recursive: true });
-const browser = await chromium.launch({ executablePath });
+const browser = await launchChromium();
+// Before anything is captured: prove the glass is actually blurring. A tour
+// whose screenshots silently lost every backdrop-filter is worse than no tour.
+console.log(`  ok   glass composites (stripe range ${await assertGlassComposites(browser)})`);
 const failures = [];
 
 for (const scheme of ['light', 'dark']) {

@@ -426,6 +426,71 @@ worse than no check at all.
 
 ---
 
+## 0017 — The screenshot harness proves the glass is blurring before it captures
+
+**Date:** 2026-09-14 · **Status:** Active
+
+**Context.** Headless Chromium, launched plainly, renders `backdrop-filter` as
+a no-op. Nothing reports it. `getComputedStyle` still returns
+`blur(36px) saturate(1.5)`, the translucent fill still paints, and the result
+looks entirely plausible — a pale wash sitting over the content. The one thing
+missing is the blur.
+
+That means every screenshot this repo has produced, from the first tour
+onward, showed the Liquid Glass surfaces *without their glass*. Every
+judgement made from those images — the fill opacities, the rim values, whether
+a nav label survives a photo scrolling underneath — was made against a render
+missing the effect being judged.
+
+**Decision.** All three Playwright harnesses launch through
+`scripts/lib/browser.mjs`, which adds `--enable-unsafe-swiftshader
+--use-gl=angle --use-angle=swiftshader` and then *measures* that the blur
+composites before any screenshot is taken. The check renders 6px black/white
+stripes under a pane carrying the app's own glass recipe and reads the pixels
+back: a real `blur(36px)` flattens them to within a few levels of uniform grey
+(measured: 5), a dropped filter leaves them fully banded (measured: 97). Over
+20 throws.
+
+`--enable-gpu` does not fix it; only the SwiftShader ANGLE backend does. Both
+were measured, not assumed.
+
+**Why it throws rather than warns.** A harness that renders glass without
+glass is worse than no harness, because its output looks fine. Verified by
+deliberately emptying the launch args: the tour aborts on the first check.
+
+---
+
+## Open — Nav labels fail AA over photography
+
+**Date:** 2026-09-14 · **Status:** Open, found by #0017
+
+The first honest render of the nav capsule — blur actually compositing —
+measured the tab labels over a bright vehicle photo scrolling underneath:
+
+| Label | Light | Dark |
+|---|---|---|
+| Home / Book / Garage / More | 2.90 – 3.16 | 4.41 – 4.63 |
+| Gallery (active, gold) | 2.58 | 3.77 |
+
+AA needs 4.5. Light mode fails on every label; dark is borderline and fails on
+two. This was invisible for as long as the harness was dropping the blur,
+because an unblurred backdrop kept far more of the fill's own lightness.
+
+**Raising the fill will not fix it.** A muted grey label sits near the middle
+of the luminance range, so it collides with any mid-tone backdrop; reaching
+4.5 against a blurred mid-grey photo needs the fill at roughly 86%, which is
+frost, not glass — and the brief is explicit that the bar is never opaque.
+The variable that actually moves the number is the label colour: over an
+arbitrary photo the inactive label needs to be around `#2E2E2E` in light mode,
+and the active gold around `#5C4718`.
+
+That trades directly against the design intent recorded on the `navLabel`
+token — that this is the one label in the app meant to be quieter than the
+thing it labels. It is a real tradeoff and wants a decision, not a unilateral
+retune. Left open deliberately.
+
+---
+
 ## Open — Outbound email sending domain
 
 **Date:** 2026-09-11 · **Status:** Blocked, needed by Phase 4
