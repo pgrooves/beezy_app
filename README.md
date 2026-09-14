@@ -32,9 +32,9 @@ reporting. Role is resolved at auth time and determines the entire shell.
 
 | Phase | Scope | State |
 |---|---|---|
-| 1 | Repo, PWA pipeline, CI → Pages, Supabase base schema, docs | **In progress** |
-| 2 | Theme, Liquid Glass nav, auth + roles, account deletion | Next |
-| 3 | Service menu, booking flow, Garage, About, Gallery | |
+| 1 | Repo, PWA pipeline, CI → Pages, Supabase base schema, docs | Done |
+| 2 | Navigable shell: both tab bars, every screen, live pricing on fixtures | **Done** |
+| 3 | Supabase auth, real data, account deletion | Next |
 | 4 | Square deposits, Google Calendar, confirmation email | |
 | 5 | Today, Schedule, Jobs pipeline, Clients, photo checklists | |
 | 6 | Subscriptions | |

@@ -38,6 +38,12 @@ export const colour = {
     danger: '#FF453A',
     /** Liquid Glass: translucent fill behind backdrop-filter. */
     glass: 'rgba(255, 255, 255, 0.68)',
+    /**
+     * Sheets need more opacity than the nav capsule. The capsule is small and
+     * content passing under it reads as depth; a full-height sheet at the same
+     * value lets the page behind collide with its own labels.
+     */
+    glassSheet: 'rgba(250, 250, 249, 0.93)',
     /** Opaque fallback when the OS asks to reduce transparency. */
     glassSolid: '#FFFFFF',
     /** Inner hairline stroke on the glass capsule. */
@@ -65,6 +71,7 @@ export const colour = {
     warning: '#FF9F0A',
     danger: '#FF453A',
     glass: 'rgba(21, 21, 21, 0.62)',
+    glassSheet: 'rgba(16, 16, 16, 0.94)',
     glassSolid: '#151515',
     glassStroke: 'rgba(255, 255, 255, 0.08)',
     glassSpecular: 'rgba(255, 255, 255, 0.22)',

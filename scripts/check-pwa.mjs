@@ -134,6 +134,15 @@ if (!html) {
   const appleIcon = read('icons/apple-touch-icon.png');
   if (appleIcon !== null) ok('apple-touch-icon file exists');
   else fail('apple-touch-icon file exists');
+
+  // A relative href resolves against the current URL, so on a deep link the
+  // icons 404 and iOS gets nothing to put on the Home Screen. They must carry
+  // the base path.
+  const relativeIcons = [...html.matchAll(/<link[^>]+rel="(?:icon|apple-touch-icon)"[^>]*>/g)]
+    .map((m) => m[0])
+    .filter((tag) => /href="\.{0,2}\//.test(tag) === false || /href="\.\//.test(tag));
+  if (relativeIcons.length === 0) ok('icon links are base-absolute');
+  else fail('icon links are base-absolute', relativeIcons.join(' '));
 }
 
 // --- SPA fallback ----------------------------------------------------------

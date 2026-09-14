@@ -41,24 +41,34 @@ which version you were on — **include it in every report**.
 
 ---
 
-## What to test in Phase 1
+## What to test now
 
-Phase 1 is the pipeline, not the app. There is deliberately almost nothing to
-use yet. What matters is that the plumbing works on real hardware:
+The whole app is walkable, running on demo data. Nothing saves, and nothing is
+charged — anything not wired up says so on the screen.
 
-- [ ] It installs, and the icon looks right on your Home Screen
-- [ ] Opening it fills the screen — no address bar, no browser chrome
-- [ ] Nothing is hidden behind the notch or the home indicator
-- [ ] The logo and text are sharp, not blurry or pixelated
-- [ ] The appearance toggle works: Light, Dark, System
-- [ ] On System, flipping your iPhone's appearance flips the app immediately
-- [ ] Status bar text stays readable in both themes
-- [ ] It opens with no network (airplane mode) after the first launch
-- [ ] It says "Installed — running standalone" once installed
-- [ ] Rotating the phone does not break the layout
+**The booking flow** is the screen that matters most:
 
-**Not in this phase:** booking, sign-in, the service menu, photos, the tab
-bar. Those arrive in Phases 2 and 3.
+- [ ] Home → **Book a detail**, then all seven steps
+- [ ] The running total at the bottom updates as you pick things
+- [ ] Picking a bigger vehicle raises it; so does a worse condition
+- [ ] The Deposit step breaks the price down — base, vehicle, condition
+- [ ] Choosing **Extreme** condition drops the deposit and says Beezy will
+      confirm on site
+- [ ] Continue stays greyed out until the step has what it needs
+
+**Getting around:**
+
+- [ ] The bottom bar floats, and content scrolls *under* it
+- [ ] The gold pill slides between tabs rather than jumping
+- [ ] **•••** opens a sheet, not a page
+- [ ] In that sheet, **Preview as → Owner** switches to Beezy's side of the app
+- [ ] Owner: Today, Schedule, Jobs, Clients, Reporting
+- [ ] **Preview as → Tech**: fewer tabs, and no money anywhere
+
+**Worth a look:** Gallery (drag the before/after slider), Garage, About.
+
+**Not built yet, on purpose:** signing in, saving anything, real photos,
+payments, calendar, email or texts.
 
 ---
 

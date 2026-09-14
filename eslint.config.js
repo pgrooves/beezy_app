@@ -58,13 +58,18 @@ export default tseslint.config(
           }),
         ),
       ],
+      // `no-restricted-globals` only catches the bare identifier, so reaching
+      // through globalThis walks straight around it. That is not hypothetical:
+      // it happened while writing the session store.
       'no-restricted-properties': [
         'error',
-        {
-          object: 'globalThis',
-          property: 'window',
-          message: 'Use an adapter in src/lib/platform instead of globalThis.window.',
-        },
+        ...['window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'indexedDB'].map(
+          (property) => ({
+            object: 'globalThis',
+            property,
+            message: `globalThis.${property} bypasses the platform boundary. Use an adapter in src/lib/platform (docs/DECISIONS.md#0001).`,
+          }),
+        ),
       ],
     },
   },
@@ -79,6 +84,18 @@ export default tseslint.config(
   {
     files: ['src/core/**/*.ts'],
     rules: {
+      // `import.meta` is a bundler construct — Vite's env, an asset base URL.
+      // None of it exists in React Native, so the portable layer must not
+      // reach for it. Asset paths are stored relative and resolved by
+      // src/lib/assets.ts in the view layer.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'MetaProperty[meta.name="import"]',
+          message:
+            'import.meta is bundler-specific. Keep src/core portable — resolve asset URLs in src/lib/assets.ts instead.',
+        },
+      ],
       'no-restricted-imports': [
         'error',
         {

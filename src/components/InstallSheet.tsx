@@ -45,7 +45,7 @@ export function InstallSheet() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="install-title"
-        className="glass relative w-full max-w-[var(--layout-content-max)] rounded-t-[var(--radius-sheet)] px-[var(--space-gutter)] pt-[var(--space-2xl)]"
+        className="glass-sheet relative w-full max-w-[var(--layout-content-max)] rounded-t-[var(--radius-sheet)] px-[var(--space-gutter)] pt-[var(--space-2xl)]"
         style={{ paddingBottom: 'max(var(--space-2xl), env(safe-area-inset-bottom))' }}
       >
         <h2 id="install-title" className="font-display text-[24px] leading-[30px]">

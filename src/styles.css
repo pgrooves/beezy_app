@@ -48,6 +48,20 @@ body {
   font-feature-settings: 'tnum' 1;
 }
 
+/*
+ * Money. Sized like a heading but set in the numeric face, because the display
+ * serif has no tabular figures — a column of prices in it will not align, and
+ * the glyphs read as a different voice from the rest of the UI.
+ * See docs/DESIGN_SYSTEM.md.
+ */
+.money {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
 .font-display {
   font-family: var(--font-display);
 }
@@ -79,6 +93,31 @@ body {
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
   border: 1px solid var(--c-glass-stroke);
   box-shadow: var(--shadow-nav);
+}
+
+/*
+ * Sheets: same material, more opacity. See the glassSheet token for why.
+ */
+.glass-sheet {
+  background: var(--c-glass-sheet);
+  backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
+  border: 1px solid var(--c-glass-stroke);
+  box-shadow: var(--shadow-sheet);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-sheet {
+    background: var(--c-glass-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-sheet {
+    background: var(--c-glass-solid);
+  }
 }
 
 /* Specular highlight along the top rim. */

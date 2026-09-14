@@ -301,6 +301,96 @@ repo-name check is skipped by the `BASE_PATH` override.
 
 ---
 
+## 0012 — The shell is built on fixtures, and says so on screen
+
+**Date:** 2026-09-14 · **Status:** Active
+
+**Context.** The whole app needed to be walkable before any third-party
+integration existed, so every screen could be judged as a product rather than
+imagined from a plan.
+
+**Decision.** `src/core/fixtures.ts` holds demo data shaped exactly like the
+Supabase schema, so swapping an array for a query is a per-screen change and
+no component moves. Real prices and real service copy, because a shell built
+on lorem ipsum cannot be evaluated.
+
+Two things are deliberately *not* faked:
+
+- **Pricing is real.** `src/core/pricing.ts` is the production engine, tested
+  against the published menu. The running total, the size band, the deposit
+  and the job duration on every screen are computed, not typed in.
+- **Anything unwired says so.** The `DemoNote` component marks surfaces that
+  are demo-only and names what they are waiting on. A shell that looks
+  finished but silently does nothing is worse than an obvious placeholder.
+
+A `RoleSwitcher` in the More sheet stands in for sign-in so both shells can be
+browsed. It disappears when auth lands: role will come from the profile and
+`devMode` goes false.
+
+---
+
+## 0013 — Money is set in the numeric face, not the display serif
+
+**Date:** 2026-09-14 · **Status:** Active
+
+Prices were picking up `.font-display` to get heading size, which put them in
+Playfair — a Didone with no tabular figures. A column of prices in it does not
+align, and the glyphs read as a different voice from the rest of the UI.
+
+`.money` sets the numeric family at heading scale with `tabular-nums`. The
+display serif stays for headings and for the referral code, which is a code
+rather than an amount.
+
+---
+
+## 0014 — Sheets use a denser glass than the nav capsule
+
+**Date:** 2026-09-14 · **Status:** Active
+
+The nav capsule at 68% opacity reads as depth: it is small, and content
+passing under it is the effect. A full-height sheet at the same value let the
+page behind collide with the sheet's own section labels — "BEEZY" landing on
+top of a membership card.
+
+`glassSheet` (93% light / 94% dark) is the sheet material; `glass` stays the
+capsule material. Both degrade to a solid surface under Reduce Transparency
+and where `backdrop-filter` is unsupported.
+
+---
+
+## 0015 — A screenshot tour is part of the test suite
+
+**Date:** 2026-09-14 · **Status:** Active
+
+**Context.** Unit tests cannot see a route that resolves to nothing, an asset
+that 404s only under a nested path, or a chart that renders empty.
+
+`scripts/tour.mjs` walks every screen in both themes at phone size, and walks
+the booking flow by clicking through all seven steps. It fails on a page error,
+a failing subresource, a redirect, or a page where `#root` never mounted.
+
+**It has already paid for itself.** In its first two runs it caught:
+
+1. **Relative icon hrefs.** `./favicon.png` resolves against the *current* URL,
+   so on `/beezy_app/admin/jobs/bk-202` it asked for
+   `/beezy_app/admin/jobs/favicon.png`. Worse than a missing favicon: iOS would
+   have had no icon when adding to the Home Screen from any nested page.
+2. **A frozen booking flow.** `BookLayout` selected `quote` and `canAdvance`
+   from the Zustand store — both stable function references, so the component
+   never re-rendered. The running total and the Continue button would have sat
+   dead while the customer filled the flow in.
+3. **An empty revenue chart.** Percentage bar heights inside an auto-height
+   column resolve to zero.
+4. **Ambiguous routing.** Two sibling routes both declared `path="/book"`.
+
+A note on the harness itself: `serve` returns its own 404 page for deep links
+rather than the app's `404.html`, and the tour's original "is the page nearly
+empty" check was loose enough to let that pass as a rendered screen. The tour
+now asserts `#root` actually mounted, and the local server runs with a rewrite
+that mirrors what Pages does. A test that cannot fail is worse than no test.
+
+---
+
 ## Open — Outbound email sending domain
 
 **Date:** 2026-09-11 · **Status:** Blocked, needed by Phase 4
