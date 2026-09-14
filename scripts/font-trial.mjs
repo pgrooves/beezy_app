@@ -23,67 +23,84 @@ const executablePath = process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium';
  */
 const CANDIDATES = [
   {
-    id: '0-current',
-    name: 'Playfair Display',
-    note: 'Current. Didone serif, matches the wordmark.',
-    file: null,
-    stack: "'Playfair Display', Georgia, serif",
-    weight: 500,
-    tracking: '0.01em',
+    id: '0-syne',
+    name: 'Syne 400',
+    note: 'Baseline. Syne has no weight below 400.',
+    file: 'syne-caps',
+    stack: "'Trial syne-caps', sans-serif",
+    weight: 400,
+    tracking: '0.06em',
+    uppercase: true,
   },
   {
-    id: '1-jost',
-    name: 'Jost',
-    note: 'Futura lineage. Geometric, fashion-house feel.',
-    file: 'jost',
-    stack: "'Trial jost', sans-serif",
-    weight: 500,
-    tracking: '0.01em',
+    id: '1-josefin',
+    name: 'Josefin Sans 300',
+    note: 'Art-deco geometric. Round bowls, low x-height.',
+    file: 'josefin',
+    stack: "'Trial josefin', sans-serif",
+    weight: 300,
+    tracking: '0.10em',
+    uppercase: true,
   },
   {
-    id: '2-outfit',
-    name: 'Outfit',
-    note: 'Clean geometric. Quiet and very current.',
-    file: 'outfit',
-    stack: "'Trial outfit', sans-serif",
-    weight: 500,
-    tracking: '-0.01em',
+    id: '2-bigshoulders',
+    name: 'Big Shoulders 300',
+    note: 'The most compact here. Condensed and tall.',
+    file: 'bigshoulders',
+    stack: "'Trial bigshoulders', sans-serif",
+    weight: 300,
+    tracking: '0.08em',
+    uppercase: true,
   },
   {
-    id: '3-manrope',
-    name: 'Manrope',
-    note: 'Semi-geometric, slightly warmer. Premium software feel.',
-    file: 'manrope',
-    stack: "'Trial manrope', sans-serif",
-    weight: 600,
-    tracking: '-0.02em',
+    id: '3-unbounded',
+    name: 'Unbounded 200',
+    note: 'Closest to Syne quirk, and it goes properly thin.',
+    file: 'unbounded',
+    stack: "'Trial unbounded', sans-serif",
+    weight: 200,
+    tracking: '0.04em',
+    uppercase: true,
   },
   {
-    id: '4-space-grotesk',
-    name: 'Space Grotesk',
-    note: 'Modern grotesque with character in the letterforms.',
-    file: 'space-grotesk',
-    stack: "'Trial space-grotesk', sans-serif",
-    weight: 500,
-    tracking: '-0.01em',
+    id: '4-gruppo',
+    name: 'Gruppo',
+    note: 'Single thin weight. Deco, wide curves.',
+    file: 'gruppo',
+    stack: "'Trial gruppo', sans-serif",
+    weight: 400,
+    tracking: '0.10em',
+    uppercase: true,
   },
   {
-    id: '5-syne',
-    name: 'Syne',
-    note: 'Distinctive and editorial. The boldest option here.',
-    file: 'syne',
-    stack: "'Trial syne', sans-serif",
-    weight: 600,
-    tracking: '-0.01em',
+    id: '5-tenor',
+    name: 'Tenor Sans',
+    note: 'Quiet luxury. Built for light caps.',
+    file: 'tenor',
+    stack: "'Trial tenor', sans-serif",
+    weight: 400,
+    tracking: '0.12em',
+    uppercase: true,
   },
   {
-    id: '6-inter-tight',
-    name: 'Inter Tight',
-    note: 'No display face at all — headings in the UI font. Most minimal.',
-    file: 'inter-tight',
-    stack: "'Trial inter-tight', sans-serif",
-    weight: 600,
-    tracking: '-0.02em',
+    id: '6-leaguespartan',
+    name: 'League Spartan 300',
+    note: 'Geometric circles, tighter and more solid.',
+    file: 'leaguespartan',
+    stack: "'Trial leaguespartan', sans-serif",
+    weight: 300,
+    tracking: '0.08em',
+    uppercase: true,
+  },
+  {
+    id: '7-sairacond',
+    name: 'Saira Condensed 300',
+    note: 'Narrow and economical. Fits long titles.',
+    file: 'sairacond',
+    stack: "'Trial sairacond', sans-serif",
+    weight: 300,
+    tracking: '0.08em',
+    uppercase: true,
   },
 ];
 
@@ -112,13 +129,17 @@ for (const font of CANDIDATES) {
   // rendered as the same fallback and only the weight/tracking overrides
   // differed. The trial looked like it worked.
   await context.addInitScript(
-    ({ file, stack, weight, tracking, fontUrl }) => {
+    ({ file, stack, weight, tracking, uppercase, fontUrl }) => {
       const apply = () => {
         const style = document.createElement('style');
         style.textContent = `
           ${file ? `@font-face { font-family: 'Trial ${file}'; src: url('${fontUrl}') format('woff2'); font-weight: 100 900; font-display: block; }` : ''}
           :root { --font-display: ${stack}; }
-          .font-display, h1, h2 { font-weight: ${weight}; letter-spacing: ${tracking}; }
+          .font-display, h1, h2 {
+            font-weight: ${weight};
+            letter-spacing: ${tracking};
+            ${uppercase ? 'text-transform: uppercase; line-height: 1.15;' : ''}
+          }
         `;
         document.head.appendChild(style);
       };
