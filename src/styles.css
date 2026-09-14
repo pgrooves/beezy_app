@@ -75,6 +75,41 @@ body {
   text-transform: uppercase;
 }
 
+/*
+ * A note on prefixes: do NOT hand-write `-webkit-backdrop-filter` below. The
+ * build adds prefixes from `build.cssTarget` in vite.config.ts, and when both
+ * forms are written by hand the minifier keeps only the prefixed one — which
+ * Chromium does not support, so every glass surface silently loses its blur.
+ * scripts/check-pwa.mjs asserts the standard property survives the build.
+ */
+
+/*
+ * Sticky screen header.
+ *
+ * Same material as the nav capsule so the two read as one system: content
+ * scrolls under it and stays faintly visible. It is more opaque than the
+ * capsule because it carries small text that has to stay readable over
+ * whatever passes beneath.
+ */
+.glass-header {
+  background: var(--c-glass-header);
+  backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
+  border-bottom: 1px solid var(--c-hairline);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-header {
+    background: var(--c-glass-solid);
+    backdrop-filter: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-header {
+    background: var(--c-glass-solid);
+  }
+}
+
 /* Safe-area helpers. viewport-fit=cover means we owe the insets back. */
 .pad-top-safe {
   padding-top: max(var(--space-lg), env(safe-area-inset-top));
@@ -90,7 +125,6 @@ body {
 .glass {
   background: var(--c-glass);
   backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
   border: 1px solid var(--c-glass-stroke);
   box-shadow: var(--shadow-nav);
 }
@@ -101,7 +135,6 @@ body {
 .glass-sheet {
   background: var(--c-glass-sheet);
   backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
   border: 1px solid var(--c-glass-stroke);
   box-shadow: var(--shadow-sheet);
 }
@@ -110,7 +143,6 @@ body {
   .glass-sheet {
     background: var(--c-glass-solid);
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }
 
@@ -142,7 +174,6 @@ body {
   .glass {
     background: var(--c-glass-solid);
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
   .glass::before {
     display: none;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Button, Card, Chip, DemoNote, EmptyState, ListRow, Screen, ScreenHeader, SectionHeader } from '../../components/ui';
+import { useParams } from 'react-router-dom';
+import { Button, Card, Chip, DemoNote, EmptyState, ListRow, Screen, DetailHeader,
+  ScreenHeader, SectionHeader } from '../../components/ui';
 import { cx } from '../../components/ui/cx';
 import { useSession } from '../../app/session';
 import { formatDuration, formatMoney } from '../../core/pricing';
@@ -165,16 +166,7 @@ export function JobDetail() {
 
   return (
     <Screen>
-      <div
-        style={{ paddingTop: 'max(var(--space-lg), calc(env(safe-area-inset-top) + var(--space-sm)))' }}
-      >
-        <Link
-          to="/admin/jobs"
-          className="eyebrow inline-flex items-center gap-[var(--space-sm)] py-[var(--space-md)] text-[var(--c-ink-muted)]"
-        >
-          ‹ Jobs
-        </Link>
-      </div>
+      <DetailHeader to="/admin/jobs" label="Jobs" />
 
       <h1 className="font-display mt-[var(--space-lg)] text-[26px] leading-[32px]">
         {client?.fullName}

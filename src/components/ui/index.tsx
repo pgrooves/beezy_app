@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { cx } from './cx';
+import { assetUrl } from '../../lib/assets';
+import { useAppearance } from '../../theme/useAppearance';
 
 /**
  * Shared primitives. Everything reads from the theme tokens — no hex literal
@@ -32,29 +34,96 @@ export function Screen({ children, className }: { children: ReactNode; className
   );
 }
 
-/** Large screen title, with an optional eyebrow above it. */
+/**
+ * Sticky screen header: title on the left, brand mark on the right.
+ *
+ * Stays put as the page scrolls, so the mark and the screen you are on are
+ * always visible. It goes full-bleed by cancelling the Screen gutter with a
+ * negative margin and re-applying it inside — otherwise the glass would stop
+ * short of the edges and content would be visible scrolling past it.
+ *
+ * `items-end` is what lines the bottom of the mark up with the bottom of the
+ * title rather than centring it against the block.
+ */
 export function ScreenHeader({
   eyebrow,
   title,
   action,
+  brand = true,
 }: {
   eyebrow?: string;
   title: string;
+  /** Controls belonging to the screen. Rendered on a second row so they do
+   *  not compete with the mark for width on a phone. */
   action?: ReactNode;
+  /** Off for pushed detail screens, which carry a back link instead. */
+  brand?: boolean;
 }) {
   return (
     <header
-      className="flex items-end justify-between gap-[var(--space-lg)]"
+      className="glass-header sticky top-0 z-30 -mx-[var(--space-gutter)] px-[var(--space-gutter)]"
       style={{
-        paddingTop: 'max(var(--space-2xl), calc(env(safe-area-inset-top) + var(--space-lg)))',
-        paddingBottom: 'var(--space-xl)',
+        paddingTop: 'max(var(--space-lg), calc(env(safe-area-inset-top) + var(--space-sm)))',
+        paddingBottom: 'var(--space-md)',
       }}
     >
-      <div className="min-w-0">
-        {eyebrow && <p className="eyebrow text-[var(--c-ink-subtle)]">{eyebrow}</p>}
-        <h1 className="font-display mt-[var(--space-xs)] text-[32px] leading-[38px]">{title}</h1>
+      <div className="flex items-end justify-between gap-[var(--space-lg)]">
+        <div className="min-w-0 flex-1">
+          {eyebrow && <p className="eyebrow truncate text-[var(--c-ink-subtle)]">{eyebrow}</p>}
+          <h1 className="font-display mt-[var(--space-xs)] truncate text-[32px] leading-[38px]">
+            {title}
+          </h1>
+        </div>
+        {brand && <BrandMark />}
       </div>
-      {action}
+      {action && <div className="mt-[var(--space-md)]">{action}</div>}
+    </header>
+  );
+}
+
+/**
+ * The wordmark, sized to sit in the top corner.
+ *
+ * The asset is white artwork on transparency, so the ink variant is the same
+ * mask recoloured rather than a second file. `shrink-0` keeps it at full size
+ * and lets a long title truncate instead.
+ */
+export function BrandMark({ className }: { className?: string }) {
+  const { resolved } = useAppearance();
+  return (
+    <img
+      src={assetUrl(`brand/logo-horizontal-${resolved === 'dark' ? 'white' : 'ink'}.png`)}
+      alt="Beezy Luxury Detailing"
+      width={825}
+      height={275}
+      className={cx('w-[132px] shrink-0', className)}
+    />
+  );
+}
+
+/**
+ * Sticky header for a pushed detail screen: back link left, mark right.
+ *
+ * Same material and stickiness as ScreenHeader, so moving between a list and
+ * a detail does not change the furniture at the top of the screen.
+ */
+export function DetailHeader({ to, label }: { to: string; label: string }) {
+  return (
+    <header
+      className="glass-header sticky top-0 z-30 -mx-[var(--space-gutter)] flex items-center justify-between gap-[var(--space-lg)] px-[var(--space-gutter)]"
+      style={{
+        paddingTop: 'max(var(--space-sm), calc(env(safe-area-inset-top) + var(--space-xs)))',
+        paddingBottom: 'var(--space-sm)',
+      }}
+    >
+      <Link
+        to={to}
+        className="eyebrow -ml-[var(--space-sm)] inline-flex min-w-0 items-center gap-[var(--space-xs)] px-[var(--space-sm)] py-[var(--space-md)] text-[var(--c-ink-muted)]"
+      >
+        <span aria-hidden>‹</span>
+        <span className="truncate">{label}</span>
+      </Link>
+      <BrandMark className="w-[104px]" />
     </header>
   );
 }

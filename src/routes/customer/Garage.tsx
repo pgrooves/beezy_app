@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Button,
   Card,
@@ -7,6 +7,7 @@ import {
   EmptyState,
   ListRow,
   Screen,
+  DetailHeader,
   ScreenHeader,
   SectionHeader,
 } from '../../components/ui';
@@ -104,16 +105,7 @@ export function VehicleDetail() {
 
   return (
     <Screen>
-      <div
-        style={{ paddingTop: 'max(var(--space-lg), calc(env(safe-area-inset-top) + var(--space-sm)))' }}
-      >
-        <Link
-          to="/garage"
-          className="eyebrow inline-flex items-center gap-[var(--space-sm)] py-[var(--space-md)] text-[var(--c-ink-muted)]"
-        >
-          ‹ Garage
-        </Link>
-      </div>
+      <DetailHeader to="/garage" label="Garage" />
 
       {vehicle.photoUrl && (
         <img

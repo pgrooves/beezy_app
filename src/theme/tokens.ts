@@ -44,6 +44,13 @@ export const colour = {
      * value lets the page behind collide with its own labels.
      */
     glassSheet: 'rgba(250, 250, 249, 0.93)',
+    /**
+     * Sticky header. Nearly opaque on purpose: it carries the screen title,
+     * and at the capsule's opacity a large heading scrolling underneath
+     * ghosted straight through it. The blur and saturation still give it the
+     * material's edge quality without costing legibility.
+     */
+    glassHeader: 'rgba(250, 250, 249, 0.96)',
     /** Opaque fallback when the OS asks to reduce transparency. */
     glassSolid: '#FFFFFF',
     /** Inner hairline stroke on the glass capsule. */
@@ -72,6 +79,7 @@ export const colour = {
     danger: '#FF453A',
     glass: 'rgba(21, 21, 21, 0.62)',
     glassSheet: 'rgba(16, 16, 16, 0.94)',
+    glassHeader: 'rgba(10, 10, 10, 0.96)',
     glassSolid: '#151515',
     glassStroke: 'rgba(255, 255, 255, 0.08)',
     glassSpecular: 'rgba(255, 255, 255, 0.22)',

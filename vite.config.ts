@@ -112,6 +112,19 @@ export default defineConfig({
   ],
   build: {
     target: 'es2022',
+    /**
+     * Real browser targets, not the JS target.
+     *
+     * Vite derives cssTarget from `target` when unset, and 'es2022' is not a
+     * browser, so Lightning CSS guessed — and emitted ONLY
+     * `-webkit-backdrop-filter`, dropping the unprefixed property. Chromium
+     * supports the unprefixed one and NOT the prefix, so every glass surface
+     * in the app rendered as flat translucency with no blur at all.
+     *
+     * Naming Safari 15 keeps the prefix for older iOS; naming Chrome 100 keeps
+     * the unprefixed property for everyone else. Both are required.
+     */
+    cssTarget: ['safari15', 'chrome100', 'firefox100', 'edge100'],
     sourcemap: true,
   },
 });

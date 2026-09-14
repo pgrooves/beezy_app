@@ -10,7 +10,7 @@
  *
  * Run: npm run check:pwa   (after npm run build)
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIST = 'dist';
@@ -143,6 +143,29 @@ if (!html) {
     .filter((tag) => /href="\.{0,2}\//.test(tag) === false || /href="\.\//.test(tag));
   if (relativeIcons.length === 0) ok('icon links are base-absolute');
   else fail('icon links are base-absolute', relativeIcons.join(' '));
+}
+
+// --- Liquid Glass -----------------------------------------------------------
+
+// The minifier once emitted ONLY `-webkit-backdrop-filter` for the glass
+// classes and dropped the standard property. Chromium supports the standard
+// one and not the prefix, so every glass surface lost its blur and nothing
+// failed — the app just quietly stopped looking like itself.
+const cssFile = readdirSync(join(DIST, 'assets')).find((f) => f.endsWith('.css'));
+if (!cssFile) {
+  fail('a stylesheet was emitted');
+} else {
+  const css = readFileSync(join(DIST, 'assets', cssFile), 'utf8');
+  for (const cls of ['glass', 'glass-sheet', 'glass-header']) {
+    const rule = css.match(new RegExp(`\\.${cls}\\{[^}]*\\}`));
+    if (!rule) {
+      fail(`.${cls} rule present`);
+      continue;
+    }
+    // Standard property, not preceded by a vendor prefix.
+    if (/(^|[;{])backdrop-filter:blur/.test(rule[0])) ok(`.${cls} keeps unprefixed backdrop-filter`);
+    else fail(`.${cls} keeps unprefixed backdrop-filter`, 'Chromium renders no blur without it');
+  }
 }
 
 // --- SPA fallback ----------------------------------------------------------

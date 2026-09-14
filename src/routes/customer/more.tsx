@@ -1,5 +1,17 @@
-import { Link, useParams } from 'react-router-dom';
-import { Button, Card, Chip, DemoNote, EmptyState, ListRow, Screen, ScreenHeader, SectionHeader, Stat } from '../../components/ui';
+import { useParams } from 'react-router-dom';
+import {
+  Button,
+  Card,
+  Chip,
+  DemoNote,
+  DetailHeader,
+  EmptyState,
+  ListRow,
+  Screen,
+  ScreenHeader,
+  SectionHeader,
+  Stat,
+} from '../../components/ui';
 import { cx } from '../../components/ui/cx';
 import { assetUrl } from '../../lib/assets';
 import { useAppearance, type ThemePreference } from '../../theme/useAppearance';
@@ -26,22 +38,6 @@ const longDate = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
 });
 
-/** Shared back link for pushed sub-screens. */
-function BackTo({ to, label }: { to: string; label: string }) {
-  return (
-    <div
-      style={{ paddingTop: 'max(var(--space-lg), calc(env(safe-area-inset-top) + var(--space-sm)))' }}
-    >
-      <Link
-        to={to}
-        className="eyebrow inline-flex items-center gap-[var(--space-sm)] py-[var(--space-md)] text-[var(--c-ink-muted)]"
-      >
-        ‹ {label}
-      </Link>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Booking detail
 // ---------------------------------------------------------------------------
@@ -65,7 +61,7 @@ export function BookingDetail() {
 
   return (
     <Screen>
-      <BackTo to="/" label="Home" />
+      <DetailHeader to="/" label="Home" />
       <h1 className="font-display mt-[var(--space-lg)] text-[28px] leading-[34px]">
         {services.map((s) => s?.name).join(' + ')}
       </h1>

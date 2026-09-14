@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Button, Card, Chip, DemoNote, EmptyState, ListRow, Screen, ScreenHeader, SectionHeader, Stat } from '../../components/ui';
+import { Button, Card, Chip, DemoNote, EmptyState, ListRow, Screen, DetailHeader,
+  ScreenHeader, SectionHeader, Stat } from '../../components/ui';
 import { cx } from '../../components/ui/cx';
 import { formatMoney } from '../../core/pricing';
 import { CLIENTS, PIPELINE_BOOKINGS, clientById, serviceById } from '../../core/fixtures';
@@ -171,16 +172,7 @@ export function ClientDetail() {
 
   return (
     <Screen>
-      <div
-        style={{ paddingTop: 'max(var(--space-lg), calc(env(safe-area-inset-top) + var(--space-sm)))' }}
-      >
-        <Link
-          to="/admin/clients"
-          className="eyebrow inline-flex items-center gap-[var(--space-sm)] py-[var(--space-md)] text-[var(--c-ink-muted)]"
-        >
-          ‹ Clients
-        </Link>
-      </div>
+      <DetailHeader to="/admin/clients" label="Clients" />
 
       <h1 className="font-display mt-[var(--space-lg)] text-[28px] leading-[34px]">
         {client.fullName}
