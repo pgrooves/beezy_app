@@ -515,6 +515,65 @@ export const PHOTOS: Photo[] = [
     serviceSlug: 'clay-bar',
     published: true,
   },
+
+];
+
+/**
+ * Real jobs from Beezy's camera, already watermarked. Waiting on the image
+ * files: the sources belong in `assets/brand-src/photos/` under these exact
+ * names, after which `npm run brand` generates them and this list gets spread
+ * into PHOTOS above.
+ *
+ * They are held out rather than referenced early because a fixture pointing at
+ * a file that was never added ships a gallery of broken tiles —
+ * `npm run check:assets` fails the build on exactly that.
+ */
+export const PENDING_WORK_PHOTOS: Photo[] = [
+  {
+    id: 'ph-work-impala',
+    kind: 'after',
+    url: photo('work-impala-64.webp'),
+    capturedAt: at(-46),
+    serviceSlug: 'beezy-wash',
+    caption: "1964 Impala SS",
+    published: true,
+  },
+  {
+    id: 'ph-work-escalade',
+    kind: 'after',
+    url: photo('work-escalade.webp'),
+    capturedAt: at(-33),
+    serviceSlug: 'ceramic-coating',
+    caption: 'Cadillac Escalade ESV',
+    published: true,
+  },
+  {
+    id: 'ph-work-sierra',
+    kind: 'after',
+    url: photo('work-sierra-at4.webp'),
+    capturedAt: at(-19),
+    serviceSlug: 'luxe-wash',
+    caption: 'GMC Sierra AT4',
+    published: true,
+  },
+  {
+    id: 'ph-work-mclaren-doors',
+    kind: 'after',
+    url: photo('work-mclaren-doors.webp'),
+    capturedAt: at(-8),
+    serviceSlug: 'ceramic-coating',
+    caption: 'McLaren GT',
+    published: true,
+  },
+  {
+    id: 'ph-work-mclaren',
+    kind: 'after',
+    url: photo('work-mclaren.webp'),
+    capturedAt: at(-8),
+    serviceSlug: 'ceramic-coating',
+    caption: 'McLaren GT',
+    published: true,
+  },
 ];
 
 /** Before/after pairs, for the comparison slider. */

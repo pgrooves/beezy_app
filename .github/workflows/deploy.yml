@@ -56,6 +56,11 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Verify referenced images shipped
+        # A fixture pointing at a photo that was never added renders a broken
+        # tile; nothing else in the build notices.
+        run: npm run check:assets
+
       - name: Verify PWA installability
         # Lighthouse dropped its PWA category in v12, so these invariants are
         # asserted directly. See scripts/check-pwa.mjs.

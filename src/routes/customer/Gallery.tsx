@@ -61,13 +61,22 @@ export default function Gallery() {
           {filteredSingles.length > 0 && (
             <div className="grid grid-cols-2 gap-[var(--space-md)]">
               {filteredSingles.map((photo) => (
-                <img
-                  key={photo.id}
-                  src={assetUrl(photo.url)}
-                  alt=""
-                  loading="lazy"
-                  className="aspect-square w-full rounded-[var(--radius-card)] object-cover"
-                />
+                <figure key={photo.id}>
+                  {/* Portrait, not square: these are shot vertically and
+                      watermarked along the bottom edge, so a square crop
+                      takes the logo off. */}
+                  <img
+                    src={assetUrl(photo.url)}
+                    alt={photo.caption ?? ''}
+                    loading="lazy"
+                    className="aspect-[3/4] w-full rounded-[var(--radius-card)] object-cover"
+                  />
+                  {photo.caption && (
+                    <figcaption className="mt-[var(--space-sm)] text-[12px] leading-[17px] text-[var(--c-ink-muted)]">
+                      {photo.caption}
+                    </figcaption>
+                  )}
+                </figure>
               ))}
             </div>
           )}

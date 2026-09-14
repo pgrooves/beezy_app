@@ -138,6 +138,8 @@ export interface Photo {
   pairKey?: string;
   capturedAt: string;
   serviceSlug?: string;
+  /** Shown under the tile in the public gallery. The car, not the service. */
+  caption?: string;
   /** Published to the public gallery, with consent. */
   published?: boolean;
 }

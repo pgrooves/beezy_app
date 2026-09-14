@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button, Card, Chip, Screen, SectionHeader, Stat } from '../../components/ui';
 import { assetUrl } from '../../lib/assets';
 import { formatMoney } from '../../core/pricing';
+import { useAppearance } from '../../theme/useAppearance';
 import {
   BOOKINGS,
   DEMO_SUBSCRIPTION,
@@ -27,6 +28,7 @@ function countdown(iso: string): string {
 }
 
 export default function Home() {
+  const { resolved } = useAppearance();
   const next = BOOKINGS.find((b) => b.status === 'confirmed');
   const past = BOOKINGS.filter((b) => b.status === 'paid');
   const lastService = past[0];
@@ -41,8 +43,21 @@ export default function Home() {
           paddingBottom: 'var(--space-xl)',
         }}
       >
-        <p className="eyebrow text-[var(--c-ink-subtle)]">Good to see you</p>
-        <h1 className="font-display mt-[var(--space-xs)] text-[32px] leading-[38px]">Marcus</h1>
+        <div className="flex items-start justify-between gap-[var(--space-lg)]">
+          <div className="min-w-0">
+            <p className="eyebrow text-[var(--c-ink-subtle)]">Good to see you</p>
+            <h1 className="font-display mt-[var(--space-xs)] text-[32px] leading-[38px]">Marcus</h1>
+          </div>
+          {/* The mark swaps with the theme: it is white artwork, so the ink
+              variant is the same shape recoloured, not a second asset. */}
+          <img
+            src={assetUrl(`brand/logo-horizontal-${resolved === 'dark' ? 'white' : 'ink'}.png`)}
+            alt="Beezy Luxury Detailing"
+            width={825}
+            height={275}
+            className="mt-[var(--space-xs)] w-[96px] shrink-0"
+          />
+        </div>
       </header>
 
       {next ? <NextAppointment booking={next} /> : <NoAppointment />}
