@@ -96,14 +96,26 @@ luxury — not gradients, not illustration.
 A floating capsule hovering 16px above the safe-area inset — **not** a
 full-width docked bar.
 
-- `backdrop-filter: blur(24px) saturate(180%)`
-- Translucent fill: 68% white (light), 62% `#151515` (dark)
-- 1px inner hairline stroke; soft ambient shadow
-- Specular highlight along the top rim
+- `backdrop-filter: blur(36px) saturate(150%)`
+- Translucent fill: 58% white (light), 52% `#151515` (dark)
 - Content scrolls underneath and stays partly visible. **The bar is never
   opaque** — that is the entire effect.
-- Active tab: accent-tinted pill that springs between positions rather than
-  cutting
+- Active tab: accent tint at 12% with a 1px accent edge, springing between
+  positions rather than cutting
+
+**The edge is lit, not outlined.** A uniform 1px border round the whole
+capsule is what makes glass read as moulded plastic, so the rim is built from
+four unequal tokens instead — `glassRim` (bright specular along the top),
+`glassRimFade` (a whisper everywhere else), `glassSheen` (the highlight
+rolling off into the upper half), and `glassUnderlight` (light bouncing up off
+the content passing beneath). Dark mode reproduces the same relationships at
+roughly a third of the amplitude.
+
+**Weight discipline.** Nav icons are 22px at **1.25** stroke, and labels use
+`navLabel` (10px / 500 / 0.01em sentence case) — deliberately *not* `.eyebrow`
+shrunk down, which at 9px / 600 / 0.18em outweighed the icon above it. The
+ambient shadow stays at 10% black: separation comes from the blur and the rim,
+not from a dark halo.
 
 **Exactly four primary tabs plus a trailing `•••` More** that opens a glass
 sheet, not a new page.

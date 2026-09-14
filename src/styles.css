@@ -87,6 +87,18 @@ body {
   text-transform: uppercase;
 }
 
+/*
+ * Nav labels. See the navLabel token for why this is not `.eyebrow` at a
+ * smaller size: it is the one label in the app deliberately set quieter than
+ * the thing it labels, because the icon above it already carries the meaning.
+ */
+.nav-label {
+  font-size: var(--text-nav-label-size);
+  line-height: var(--text-nav-label-leading);
+  letter-spacing: var(--text-nav-label-tracking);
+  font-weight: var(--text-nav-label-weight);
+}
+
 /* All-caps section label, echoing the site's voice. Never over four words. */
 .eyebrow {
   font-size: var(--text-eyebrow-size);
@@ -142,22 +154,39 @@ body {
 /*
  * Liquid Glass. Used by the nav capsule and sheets from Phase 2 onward;
  * defined here so the degradation rules live in one place.
+ *
+ * The edge is lit rather than outlined. A uniform 1px border is what makes a
+ * glass surface read as moulded plastic, so instead:
+ *   - an inset ring at `glassRimFade` — a whisper, all the way round
+ *   - `::before`, a bright specular ON TOP of that ring's top edge (not below
+ *     it — two adjacent 1px lines is the thing this replaced)
+ *   - an inset underlight along the bottom, standing in for light bouncing up
+ *     off whatever is scrolling past underneath
+ *   - a sheen rolling off the top rim into the upper half of the pane
+ * Every value comes from the colour tokens, so dark mode reproduces the same
+ * relationships at a fraction of the amplitude.
  */
 .glass {
-  background: var(--c-glass);
+  background-color: var(--c-glass);
+  background-image: linear-gradient(180deg, var(--c-glass-sheen) 0%, transparent 52%);
   backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
-  border: 1px solid var(--c-glass-stroke);
-  box-shadow: var(--shadow-nav);
+  box-shadow:
+    inset 0 0 0 1px var(--c-glass-rim-fade),
+    inset 0 -1px 0 var(--c-glass-underlight),
+    var(--shadow-nav);
 }
 
 /*
  * Sheets: same material, more opacity. See the glassSheet token for why.
+ * No specular — a sheet is a large surface and a bright line across the full
+ * width of it reads as a seam rather than an edge.
  */
 .glass-sheet {
   background: var(--c-glass-sheet);
   backdrop-filter: blur(var(--blur-glass)) saturate(var(--blur-glass-saturate));
-  border: 1px solid var(--c-glass-stroke);
-  box-shadow: var(--shadow-sheet);
+  box-shadow:
+    inset 0 0 0 1px var(--c-glass-rim-fade),
+    var(--shadow-sheet);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -173,7 +202,11 @@ body {
   }
 }
 
-/* Specular highlight along the top rim. */
+/*
+ * The lit top rim. Runs the full width with transparent ends so it fades out
+ * before it reaches the corner radius, and carries its own alpha in the token
+ * rather than an opacity here — one place to tune the shine.
+ */
 .glass::before {
   content: '';
   position: absolute;
@@ -182,19 +215,23 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    var(--c-glass-specular) 30%,
-    var(--c-glass-specular) 70%,
+    var(--c-glass-rim) 18%,
+    var(--c-glass-rim) 82%,
     transparent
   );
-  opacity: 0.7;
   pointer-events: none;
 }
 
-/* Reduce Transparency: solid surface, no blur. Required by the brief. */
+/* Reduce Transparency: solid surface, no blur. Required by the brief.
+   The lit rim goes with it — on an opaque surface there is nothing to light —
+   so the capsule falls back to an ordinary hairline to keep its edge. */
 @media (prefers-reduced-transparency: reduce) {
   .glass {
     background: var(--c-glass-solid);
     backdrop-filter: none;
+    box-shadow:
+      inset 0 0 0 1px var(--c-hairline),
+      var(--shadow-nav);
   }
   .glass::before {
     display: none;
@@ -206,6 +243,12 @@ body {
 @supports not (backdrop-filter: blur(1px)) {
   .glass {
     background: var(--c-glass-solid);
+    box-shadow:
+      inset 0 0 0 1px var(--c-hairline),
+      var(--shadow-nav);
+  }
+  .glass::before {
+    display: none;
   }
 }
 

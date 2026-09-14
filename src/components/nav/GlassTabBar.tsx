@@ -70,13 +70,15 @@ export function GlassTabBar({
         {pill && (
           <span
             aria-hidden
-            className="absolute rounded-[var(--radius-full)] bg-[var(--c-accent)]"
+            className="absolute rounded-[var(--radius-full)] bg-[var(--c-accent-pill)]"
             style={{
               left: pill.left,
               width: pill.width,
               top: 'var(--space-xs)',
               bottom: 'var(--space-xs)',
-              opacity: 0.16,
+              // An edge rather than a heavier wash: over glass, a solid tint
+              // loses its shape and reads as a gold blob.
+              boxShadow: 'inset 0 0 0 1px var(--c-accent-pill-edge)',
               transition: reduceMotion
                 ? 'opacity var(--motion-fast) linear'
                 : 'left var(--motion-base) var(--motion-spring), width var(--motion-base) var(--motion-spring)',
@@ -95,13 +97,13 @@ export function GlassTabBar({
             onClick={() => platform.haptics.selection()}
             className={({ isActive }) =>
               cx(
-                'relative z-10 flex flex-1 flex-col items-center justify-center gap-[3px] rounded-[var(--radius-full)]',
+                'relative z-10 flex flex-1 flex-col items-center justify-center gap-[4px] rounded-[var(--radius-full)]',
                 isActive && !moreOpen ? 'text-[var(--c-accent-text)]' : 'text-[var(--c-ink-muted)]',
               )
             }
           >
             <TabIcon name={tab.icon} />
-            <span className="eyebrow text-[9px]" style={{ minHeight: 0 }}>
+            <span className="nav-label" style={{ minHeight: 0 }}>
               {tab.label}
             </span>
           </NavLink>
@@ -119,12 +121,12 @@ export function GlassTabBar({
             itemRefs.current[tabs.length] = el;
           }}
           className={cx(
-            'relative z-10 flex w-[56px] flex-col items-center justify-center gap-[3px] rounded-[var(--radius-full)]',
+            'relative z-10 flex w-[56px] flex-col items-center justify-center gap-[4px] rounded-[var(--radius-full)]',
             moreOpen ? 'text-[var(--c-accent-text)]' : 'text-[var(--c-ink-muted)]',
           )}
         >
           <TabIcon name="more" />
-          <span className="eyebrow text-[9px]" style={{ minHeight: 0 }}>
+          <span className="nav-label" style={{ minHeight: 0 }}>
             More
           </span>
         </button>
@@ -148,14 +150,17 @@ export type IconName =
  * Inline SVG rather than an icon font: no extra network request, and stroke
  * colour inherits so the active state needs no second asset.
  */
-export function TabIcon({ name, size = 20 }: { name: IconName; size?: number }) {
+export function TabIcon({ name, size = 22 }: { name: IconName; size?: number }) {
   const common = {
     width: size,
     height: size,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
-    strokeWidth: 1.6,
+    // A bigger glyph carrying a lighter line. At 1.6 on a 24 grid the stroke
+    // was 7% of the icon's own height, which reads as clip art next to type
+    // this light — the rest of the app is set at 300–500 weight.
+    strokeWidth: 1.25,
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
     'aria-hidden': true,
@@ -222,9 +227,11 @@ export function TabIcon({ name, size = 20 }: { name: IconName; size?: number }) 
     case 'more':
       return (
         <svg {...common}>
-          <circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
-          <circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+          {/* Filled, so they carry more weight per pixel than a stroked
+              glyph — sized down to sit level with the 1.25 strokes. */}
+          <circle cx="5.5" cy="12" r="1.25" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none" />
+          <circle cx="18.5" cy="12" r="1.25" fill="currentColor" stroke="none" />
         </svg>
       );
   }

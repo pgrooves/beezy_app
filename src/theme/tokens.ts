@@ -33,11 +33,17 @@ export const colour = {
      * 4.87:1 on `surface`. Use this for any gold *lettering*.
      */
     accentText: '#8A6D2F',
+    /**
+     * The active nav pill. A tint and an edge rather than a solid fill — over
+     * glass, a heavier wash turns into a gold blob with no shape to it.
+     */
+    accentPill: 'rgba(201, 169, 97, 0.12)',
+    accentPillEdge: 'rgba(201, 169, 97, 0.24)',
     success: '#34C759',
     warning: '#FF9F0A',
     danger: '#FF453A',
     /** Liquid Glass: translucent fill behind backdrop-filter. */
-    glass: 'rgba(255, 255, 255, 0.68)',
+    glass: 'rgba(255, 255, 255, 0.58)',
     /**
      * Sheets need more opacity than the nav capsule. The capsule is small and
      * content passing under it reads as depth; a full-height sheet at the same
@@ -53,10 +59,21 @@ export const colour = {
     glassHeader: 'rgba(250, 250, 249, 0.96)',
     /** Opaque fallback when the OS asks to reduce transparency. */
     glassSolid: '#FFFFFF',
-    /** Inner hairline stroke on the glass capsule. */
-    glassStroke: 'rgba(255, 255, 255, 0.85)',
-    /** Specular highlight along the capsule's top rim. */
-    glassSpecular: 'rgba(255, 255, 255, 0.95)',
+    /**
+     * The four values below light the glass. They are deliberately unequal:
+     * a pane has a lit top edge, a faint wash where the highlight rolls off,
+     * a bounce along the underside, and almost nothing on the sides. Giving
+     * the whole rim one bright value — which is what a plain 1px border does —
+     * is what makes a glass surface read as moulded plastic.
+     */
+    /** Specular along the top rim. The brightest thing on the capsule. */
+    glassRim: 'rgba(255, 255, 255, 0.78)',
+    /** The rest of the rim. A whisper, not an outline. */
+    glassRimFade: 'rgba(255, 255, 255, 0.22)',
+    /** Reflection wash rolling off the top rim into the upper half. */
+    glassSheen: 'rgba(255, 255, 255, 0.20)',
+    /** Light bouncing up off the content passing underneath. */
+    glassUnderlight: 'rgba(255, 255, 255, 0.45)',
     scrim: 'rgba(17, 17, 17, 0.42)',
   },
   dark: {
@@ -74,15 +91,22 @@ export const colour = {
     // On near-black the bright champagne already reaches 8.8:1, so text and
     // fill share one value here.
     accentText: '#C9A961',
+    // The pill needs slightly more presence on a dark ground to read at all.
+    accentPill: 'rgba(201, 169, 97, 0.16)',
+    accentPillEdge: 'rgba(201, 169, 97, 0.28)',
     success: '#34C759',
     warning: '#FF9F0A',
     danger: '#FF453A',
-    glass: 'rgba(21, 21, 21, 0.62)',
+    glass: 'rgba(21, 21, 21, 0.52)',
     glassSheet: 'rgba(16, 16, 16, 0.94)',
     glassHeader: 'rgba(10, 10, 10, 0.96)',
     glassSolid: '#151515',
-    glassStroke: 'rgba(255, 255, 255, 0.08)',
-    glassSpecular: 'rgba(255, 255, 255, 0.22)',
+    // Dark keeps the same relationships at a fraction of the amplitude: on a
+    // near-black ground the light-mode values would frost the capsule white.
+    glassRim: 'rgba(255, 255, 255, 0.26)',
+    glassRimFade: 'rgba(255, 255, 255, 0.05)',
+    glassSheen: 'rgba(255, 255, 255, 0.07)',
+    glassUnderlight: 'rgba(255, 255, 255, 0.10)',
     scrim: 'rgba(0, 0, 0, 0.58)',
   },
 } as const;
@@ -149,6 +173,13 @@ export const textStyle = {
   displayCaps: { size: 26, leading: 30, tracking: 0.09, weight: 300 },
   /** All-caps section labels. Wide tracking, echoing the site's voice. */
   eyebrow: { size: 12, leading: 16, tracking: 0.18, weight: 600 },
+  /**
+   * Nav labels. Deliberately NOT the eyebrow style shrunk down: at 9px the
+   * eyebrow's 600 weight and 0.18em tracking outweigh the icon sitting above
+   * it, and caps that small stop being readable at a glance. This is the one
+   * label in the app that is meant to be quieter than what it labels.
+   */
+  navLabel: { size: 10, leading: 12, tracking: 0.01, weight: 500 },
   bodyLg: { size: 17, leading: 26, tracking: 0, weight: 400 },
   body: { size: 15, leading: 23, tracking: 0, weight: 400 },
   bodySm: { size: 13, leading: 19, tracking: 0, weight: 400 },
@@ -172,8 +203,13 @@ export const motion = {
 export const elevation = {
   card: '0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)',
   sheet: '0 -4px 24px rgba(0,0,0,0.12)',
-  /** Ambient shadow under the floating nav capsule. */
-  nav: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
+  /**
+   * Ambient shadow under the floating nav capsule. Kept light on purpose: at
+   * a heavier value the capsule stops reading as a pane hovering above the
+   * content and starts reading as a sticker pasted onto it. Separation comes
+   * from the blur and the lit rim, not from a dark halo.
+   */
+  nav: '0 10px 30px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)',
 } as const;
 
 export const layout = {
@@ -181,13 +217,24 @@ export const layout = {
   tapTarget: 44,
   /** Gap between the nav capsule and the safe-area inset. */
   navFloat: 16,
-  navHeight: 64,
+  navHeight: 62,
   /** Content max width, so the app stays readable on tablets. */
   contentMax: 560,
 } as const;
 
 export const blur = {
-  /** backdrop-filter on the nav capsule and sheets. */
-  glass: 24,
-  glassSaturate: 180,
+  /**
+   * backdrop-filter on the nav capsule and sheets. The blur carries the
+   * separation now that the shadow and rim are light, so it runs deeper than
+   * before; the saturation is pulled back because at 180% anything passing
+   * under the bar had its colour visibly pushed — navy paint went electric.
+   *
+   * Depth is also what buys the transparency: at 24px a line of body copy
+   * scrolling under the capsule stayed legible and competed with the tab
+   * labels, so the fill had to carry the separation. At 36px it diffuses into
+   * tone, which is why the fill can sit lower than it used to and the bar
+   * still reads glass rather than frost.
+   */
+  glass: 36,
+  glassSaturate: 150,
 } as const;
