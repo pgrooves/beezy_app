@@ -422,7 +422,7 @@ export function StepLocation() {
       </div>
 
       <div className="mt-[var(--space-xl)] rounded-[var(--radius-card)] border border-[var(--c-hairline)] bg-[var(--c-surface-alt)] p-[var(--space-lg)]">
-        <p className="eyebrow text-[var(--c-success)]">Inside the service area</p>
+        <p className="eyebrow text-[var(--c-success-text)]">Inside the service area</p>
         <p className="mt-[var(--space-xs)] text-[13px] leading-[19px] text-[var(--c-ink-muted)]">
           Greater New Orleans. About 12 miles from base — no travel fee.
         </p>

@@ -16,8 +16,21 @@ export const colour = {
     ink: '#111111',
     /** Secondary copy: captions, metadata, inactive tabs. */
     inkMuted: '#6B6B6B',
-    /** Tertiary copy: placeholders, disabled. AA against bg at 14px+. */
-    inkSubtle: '#8E8E8E',
+    /**
+     * Tertiary copy: eyebrow labels, row details, stat captions.
+     *
+     * It was `#8E8E8E` on the strength of a comment claiming AA "at 14px+",
+     * which was wrong twice over — 3.13:1 is below AA at *any* size, and every
+     * call site renders it at 12–13px, nowhere near WCAG's large-text floor of
+     * 24px. Lighthouse failed the build over it.
+     *
+     * Now 4.88:1 on `bg`, 5.10:1 on `surface`, 4.63:1 on `surfaceAlt`. That
+     * leaves it very close to `inkMuted`, and there is no way around it: on a
+     * near-white ground three visibly separated greys cannot all clear 4.5.
+     * In light mode the tertiary tone is carried by size and weight instead.
+     * Dark mode still has the headroom for a real ladder.
+     */
+    inkSubtle: '#6E6E6E',
     hairline: '#E5E5E5',
     /** The brand's button black, matching the existing Square checkout. */
     brand: '#212121',
@@ -29,19 +42,33 @@ export const colour = {
     accent: '#C9A961',
     onAccent: '#111111',
     /**
-     * The same gold, darkened until it passes AA as text: 4.67:1 on `bg`,
-     * 4.87:1 on `surface`. Use this for any gold *lettering*.
+     * The same gold, darkened until it passes AA as text on every ground it
+     * is set on: 4.89:1 on `bg`, 5.11:1 on `surface`, 4.64:1 on `surfaceAlt`.
+     * That last one is why it is no longer `#8A6D2F` — the raised surface is
+     * the tightest of the three and nothing used to check it, so the token sat
+     * at 4.43:1 there. Use this for any gold *lettering*.
      */
-    accentText: '#8A6D2F',
+    accentText: '#866A2D',
     /**
      * The active nav pill. A tint and an edge rather than a solid fill — over
      * glass, a heavier wash turns into a gold blob with no shape to it.
      */
     accentPill: 'rgba(201, 169, 97, 0.12)',
     accentPillEdge: 'rgba(201, 169, 97, 0.24)',
+    /**
+     * Status colours, fills only — the same split the two golds use, and for
+     * the same reason. On white these measure 2.21:1, 2.05:1 and 3.42:1, so a
+     * status Chip setting its label in one of them fails AA outright.
+     */
     success: '#34C759',
     warning: '#FF9F0A',
     danger: '#FF453A',
+    /** The same three hues darkened until they carry text on every ground:
+     *  4.9:1 or better on `bg`, `surface` and `surfaceAlt` alike. Any status
+     *  *lettering* uses these. */
+    successText: '#1E7A38',
+    warningText: '#966300',
+    dangerText: '#D0281C',
     /** Liquid Glass: translucent fill behind backdrop-filter. */
     glass: 'rgba(255, 255, 255, 0.58)',
     /**
@@ -82,7 +109,10 @@ export const colour = {
     surfaceAlt: '#1E1E1E',
     ink: '#F5F5F5',
     inkMuted: '#A1A1A1',
-    inkSubtle: '#7A7A7A',
+    // 4.29:1 on `surface` at the old #7A7A7A — the light theme was not the
+    // only one failing, it was just the one Lighthouse audits. Now 5.37:1 on
+    // `surface` and 4.83:1 on the raised surface, which is the tightest case.
+    inkSubtle: '#8A8A8A',
     hairline: '#262626',
     brand: '#F5F5F5',
     onBrand: '#111111',
@@ -97,6 +127,11 @@ export const colour = {
     success: '#34C759',
     warning: '#FF9F0A',
     danger: '#FF453A',
+    // On near-black all three already clear AA as text (8.4:1, 9.0:1, 5.4:1),
+    // so fill and lettering share one value — same as accentText.
+    successText: '#34C759',
+    warningText: '#FF9F0A',
+    dangerText: '#FF453A',
     glass: 'rgba(21, 21, 21, 0.52)',
     glassSheet: 'rgba(16, 16, 16, 0.94)',
     glassHeader: 'rgba(10, 10, 10, 0.96)',

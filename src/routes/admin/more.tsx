@@ -209,7 +209,7 @@ export function Reporting() {
                   <span className="tabular text-[13px] leading-[19px] text-[var(--c-ink-muted)]">
                     {step.count}
                     {drop > 0 && (
-                      <span className={cx('ml-[var(--space-sm)]', drop >= 40 && 'text-[var(--c-warning)]')}>
+                      <span className={cx('ml-[var(--space-sm)]', drop >= 40 && 'text-[var(--c-warning-text)]')}>
                         −{drop}%
                       </span>
                     )}

@@ -460,6 +460,52 @@ deliberately emptying the launch args: the tour aborts on the first check.
 
 ---
 
+## 0018 — Every saturated colour gets a text-safe pair, and contrast is asserted per ground
+
+**Date:** 2026-09-14 · **Status:** Active
+
+**Context.** CI had been red on `main` for three pushes. The Lighthouse gate
+(accessibility ≥ 0.95) was scoring 0.90 on two audits:
+
+- **`color-contrast`.** `inkSubtle` was `#8E8E8E`, carrying a comment claiming
+  AA "at 14px+". Both halves were wrong: 3.13:1 is below AA at any size, and
+  WCAG's large-text floor is 24px, while every call site — `.eyebrow`, ListRow
+  details, Stat captions, DemoNote — renders it at 12–13px. Separately, the
+  status `Chip` set its 10px label in the bright fill colours: green measured
+  2.21:1 on white, amber 2.05:1, red 3.42:1.
+- **`aria-hidden-focus`.** The closed More sheet was `aria-hidden` while its
+  contents were still in the tab order, so a keyboard user could tab into a
+  drawer they could not see.
+
+**Why the suite stayed green.** `contrast.test.ts` asserted `inkSubtle` at
+AA_LARGE (3.0) only, on the strength of that same wrong comment, and never
+asserted the status colours at all. A threshold is only as good as the claim
+it encodes.
+
+**Decision.**
+
+1. **The fill/text split generalises.** `successText`, `warningText` and
+   `dangerText` join `accentText`. Dark mode shares one value per hue, as it
+   already did for gold.
+2. **Contrast is asserted against every ground**, `surfaceAlt` included. That
+   widening immediately caught two more the old suite never looked at:
+   `accentText` sat at 4.43:1 on the raised surface, and the new
+   `warningText` at 4.46:1. Both darkened. 82 assertions, up from 24.
+3. **`inkSubtle` is now `#6E6E6E`**, nearly `inkMuted`. That collapse is
+   real and is documented rather than worked around: on a near-white ground
+   three visibly separated greys cannot all clear 4.5, so light mode carries
+   the tertiary tone with size and weight instead.
+4. **`aria-hidden` implies `inert`** on the More sheet. Per-element `tabIndex`
+   had been tried and did not cover it — anything passed as `footer` brought
+   its own controls, which is exactly what the dev RoleSwitcher did.
+
+**Verified.** Lighthouse accessibility 0.90 → 1.00 against the built app, no
+failing audits. The tab order was walked 60 stops with zero landing inside the
+closed sheet. 82 contrast assertions, 30 PWA checks, the full tour in both
+themes.
+
+---
+
 ## Open — Nav labels fail AA over photography
 
 **Date:** 2026-09-14 · **Status:** Open, found by #0017
@@ -470,7 +516,7 @@ measured the tab labels over a bright vehicle photo scrolling underneath:
 | Label | Light | Dark |
 |---|---|---|
 | Home / Book / Garage / More | 2.90 – 3.16 | 4.41 – 4.63 |
-| Gallery (active, gold) | 2.58 | 3.77 |
+| Gallery (active, gold) | 2.70 | 3.77 |
 
 AA needs 4.5. Light mode fails on every label; dark is borderline and fails on
 two. This was invisible for as long as the harness was dropping the blur,
@@ -482,7 +528,9 @@ of the luminance range, so it collides with any mid-tone backdrop; reaching
 frost, not glass — and the brief is explicit that the bar is never opaque.
 The variable that actually moves the number is the label colour: over an
 arbitrary photo the inactive label needs to be around `#2E2E2E` in light mode,
-and the active gold around `#5C4718`.
+and the active gold around `#5C4718` — well past where #0018 already took
+`accentText`, which is as dark as that token can go before it stops
+reading as gold at all.
 
 That trades directly against the design intent recorded on the `navLabel`
 token — that this is the one label in the app meant to be quieter than the

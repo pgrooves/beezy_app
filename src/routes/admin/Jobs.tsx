@@ -244,7 +244,7 @@ export function JobDetail() {
               <ListRow
                 label="Deposit taken"
                 trailing={
-                  <span className="tabular text-[14px] text-[var(--c-success)]">
+                  <span className="tabular text-[14px] text-[var(--c-success-text)]">
                     {formatMoney(booking.depositCents)}
                   </span>
                 }

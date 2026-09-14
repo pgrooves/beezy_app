@@ -19,25 +19,42 @@ properties. No hex literal belongs in a component (DECISIONS.md#0002).
 | Raised surface | `#F4F4F3` | `#1E1E1E` |
 | Ink | `#111111` | `#F5F5F5` |
 | Ink muted | `#6B6B6B` | `#A1A1A1` |
+| Ink subtle | `#6E6E6E` | `#8A8A8A` |
 | Hairline | `#E5E5E5` | `#262626` |
 | Brand | `#212121` | `#F5F5F5` |
 | Accent — fills (champagne) | `#C9A961` | `#C9A961` |
-| Accent — text | `#8A6D2F` | `#C9A961` |
-| Success / Warning / Danger | `#34C759` / `#FF9F0A` / `#FF453A` | same |
+| Accent — text | `#866A2D` | `#C9A961` |
+| Success / Warning / Danger — fills | `#34C759` / `#FF9F0A` / `#FF453A` | same |
+| Success / Warning / Danger — text | `#1E7A38` / `#966300` / `#D0281C` | same as fills |
 
 **The accent is rationed.** Champagne appears on tier badges, the active nav
 state, and premium service highlights. Its scarcity is what makes it read as
 premium rather than decorative.
 
-**There are two golds, and mixing them up is an accessibility bug.**
-`accent` is the bright champagne and is a **fill colour only** — it measures
-2.15:1 against the light background, far below the 4.5:1 AA needs, so it can
-never carry lettering. `accentText` is the same hue darkened to 4.67:1 on
-`bg` and 4.87:1 on `surface`. Any gold *text* uses `accentText`; so does the
-focus ring, since WCAG 1.4.11 wants 3:1 for a focus indicator.
+**Every saturated colour comes in a fill and a text value, and mixing them up
+is an accessibility bug.** `accent` is the bright champagne and is a **fill
+colour only** — 2.15:1 against the light background, far below the 4.5:1 AA
+needs, so it can never carry lettering. `accentText` is the same hue darkened
+until it clears AA on all three light grounds. The status colours follow
+exactly the same split, for exactly the same reason: `#34C759` set as 10px
+Chip text measured 2.21:1 on white and shipped that way. Any gold or status
+*lettering* uses the `*Text` value; so does the focus ring, since WCAG 1.4.11
+wants 3:1 for a focus indicator.
 
-On dark both tokens hold the same value: the bright champagne already reaches
-8.8:1 on near-black.
+On dark, fill and text share one value for all four hues — on near-black the
+bright versions already clear AA.
+
+**Check against `surfaceAlt`, not just `bg`.** The raised surface is the
+tightest of the three grounds, and it is where `accentText` was sitting at
+4.43:1 while every check looked only at `bg` and `surface`.
+
+**The light theme has two greys, not three.** `inkSubtle` used to be `#8E8E8E`
+on the claim that it was AA "at 14px+" — it was 3.13:1, which is below AA at
+any size, and nothing ever set it above 13px. Fixed, it lands at `#6E6E6E`,
+almost on top of `inkMuted`, and that is not a mistake to tidy up later: on a
+near-white ground three visibly separated greys cannot all clear 4.5. In light
+mode the tertiary tone is carried by size and weight. Dark mode keeps a real
+three-step ladder because it has the headroom.
 
 Brand inverts between schemes: the primary button is near-black on light and
 near-white on dark, so it stays the highest-contrast element either way.
@@ -137,9 +154,15 @@ Implemented in `src/styles.css`, in one place:
 Non-negotiable, checked in CI by the Lighthouse audit (accessibility ≥ 0.95):
 
 - **44pt minimum** on every interactive element, enforced in the base layer.
-- **WCAG AA contrast in both themes.** The champagne accent is the one colour
-  that fails at body size — hence the rationing rule above.
+- **WCAG AA contrast in both themes**, asserted token-by-token in
+  `src/theme/contrast.test.ts` — every text token against `bg`, `surface` and
+  `surfaceAlt`. The saturated hues (champagne, green, amber, red) all fail at
+  body size in light mode, hence the fill/text split above.
 - Full VoiceOver labelling. Icon-only controls carry `aria-label`.
+- **`aria-hidden` implies `inert`.** A subtree marked hidden that still holds
+  reachable controls is its own axe failure, and a real one — the closed More
+  sheet sat in the tab order. Per-element `tabIndex` does not cover content
+  passed in as children; `inert` covers the subtree.
 - Focus rings use the accent at 2px with 2px offset, and are never removed.
 - Every destructive admin action confirms.
 

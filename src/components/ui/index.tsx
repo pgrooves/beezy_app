@@ -254,9 +254,9 @@ export function Chip({
   const tones = {
     neutral: 'border-[var(--c-hairline)] text-[var(--c-ink-muted)]',
     accent: 'border-[var(--c-accent)] text-[var(--c-accent-text)]',
-    success: 'border-[var(--c-success)] text-[var(--c-success)]',
-    warning: 'border-[var(--c-warning)] text-[var(--c-warning)]',
-    danger: 'border-[var(--c-danger)] text-[var(--c-danger)]',
+    success: 'border-[var(--c-success)] text-[var(--c-success-text)]',
+    warning: 'border-[var(--c-warning)] text-[var(--c-warning-text)]',
+    danger: 'border-[var(--c-danger)] text-[var(--c-danger-text)]',
   };
   return (
     <span
@@ -293,7 +293,7 @@ export function ListRow({
         <span
           className={cx(
             'block text-[15px] leading-[23px]',
-            danger ? 'text-[var(--c-danger)]' : 'text-[var(--c-ink)]',
+            danger ? 'text-[var(--c-danger-text)]' : 'text-[var(--c-ink)]',
           )}
         >
           {label}

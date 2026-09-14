@@ -30,10 +30,21 @@ export function MoreSheet({
         !open && 'pointer-events-none',
       )}
       aria-hidden={!open}
+      // `inert` is what makes aria-hidden honest. Marking the subtree hidden
+      // while it still holds reachable controls is an axe failure in its own
+      // right (`aria-hidden-focus`), and it is a real one: the closed sheet sat
+      // in the tab order, so a keyboard user tabbed into a drawer they could
+      // not see. Per-element tabIndex did not cover it — anything passed in as
+      // `footer` brought its own focusable controls. inert covers the subtree.
+      //
+      // Spread as a string rather than a boolean prop: React 18 does not know
+      // `inert` and warns on `inert={true}`, but renders an unknown attribute
+      // with a string value verbatim, and the attribute's presence is what the
+      // browser acts on.
+      {...(open ? {} : { inert: '' })}
     >
       <button
         type="button"
-        tabIndex={open ? 0 : -1}
         aria-label="Close menu"
         onClick={onClose}
         className="absolute inset-0 bg-[var(--c-scrim)] transition-opacity"
@@ -73,7 +84,6 @@ export function MoreSheet({
                   key={link.to}
                   to={link.to}
                   onClick={onClose}
-                  tabIndex={open ? 0 : -1}
                   className="flex items-center gap-[var(--space-lg)] border-b border-[var(--c-hairline)] py-[var(--space-lg)] last:border-b-0"
                 >
                   <span className="min-w-0 flex-1">

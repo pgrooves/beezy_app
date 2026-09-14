@@ -30,21 +30,51 @@ const AA_NON_TEXT = 3;
 describe.each(['light', 'dark'] as const)('%s scheme', (scheme) => {
   const c = colour[scheme];
 
+  /**
+   * Every text token against every ground it is actually set on — including
+   * `surfaceAlt`, which is the tightest of the three and was the one nothing
+   * checked.
+   */
+  const TEXT_TOKENS: [string, string][] = [
+    ['ink', c.ink],
+    ['inkMuted', c.inkMuted],
+    ['inkSubtle', c.inkSubtle],
+    ['accentText', c.accentText],
+    ['successText', c.successText],
+    ['warningText', c.warningText],
+    ['dangerText', c.dangerText],
+  ];
+  const GROUNDS: [string, string][] = [
+    ['bg', c.bg],
+    ['surface', c.surface],
+    ['surfaceAlt', c.surfaceAlt],
+  ];
+
+  it.each(
+    TEXT_TOKENS.flatMap(([name, fg]) =>
+      GROUNDS.map(([ground, bg]) => [`${name} on ${ground}`, fg, bg] as const),
+    ),
+  )('%s meets AA for body text', (_label, fg, bg) => {
+    expect(ratio(fg, bg)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
   it.each([
-    ['ink on bg', c.ink, c.bg],
-    ['ink on surface', c.ink, c.surface],
-    ['inkMuted on bg', c.inkMuted, c.bg],
-    ['inkMuted on surface', c.inkMuted, c.surface],
-    ['accentText on bg', c.accentText, c.bg],
-    ['accentText on surface', c.accentText, c.surface],
     ['onBrand on brand', c.onBrand, c.brand],
     ['onAccent on accent', c.onAccent, c.accent],
   ])('%s meets AA for body text', (_label, fg, bg) => {
     expect(ratio(fg, bg)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it('inkSubtle meets AA for large text at minimum', () => {
-    expect(ratio(c.inkSubtle, c.bg)).toBeGreaterThanOrEqual(AA_LARGE);
+  /*
+   * `inkSubtle` used to be asserted at AA_LARGE only, on the reasoning that it
+   * was for large text. Nothing ever set it large: it renders at 12–13px in
+   * `.eyebrow`, ListRow details, Stat captions and DemoNote. The token measured
+   * 3.13:1 and the suite stayed green while Lighthouse failed the build over
+   * exactly those elements. A threshold is only as good as the claim it
+   * encodes, so AA_LARGE now guards the one thing genuinely set large.
+   */
+  it('display-scale text clears AA large at minimum', () => {
+    expect(ratio(c.inkMuted, c.bg)).toBeGreaterThanOrEqual(AA_LARGE);
   });
 
   it('the focus ring is distinguishable from the background', () => {
@@ -67,5 +97,25 @@ describe('accent discipline', () => {
 
   it('dark mode can share one value, because the champagne clears AA there', () => {
     expect(ratio(colour.dark.accent, colour.dark.bg)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+});
+
+describe('status colours follow the same fill/text split', () => {
+  // A status Chip sets its label at 10px. Pointing it at the bright fill is
+  // the same bug as pointing gold lettering at `accent`, and it shipped:
+  // green measured 2.21:1 on white, amber 2.05:1, red 3.42:1.
+  it.each(['success', 'warning', 'danger'] as const)(
+    'the %s fill is not safe as light-mode text, which is why its *Text pair exists',
+    (name) => {
+      expect(ratio(colour.light[name], colour.light.surface)).toBeLessThan(AA_TEXT);
+      expect(colour.light[`${name}Text`]).not.toBe(colour.light[name]);
+    },
+  );
+
+  it('dark mode shares one value per hue, as the accent does', () => {
+    for (const name of ['success', 'warning', 'danger'] as const) {
+      expect(ratio(colour.dark[name], colour.dark.surface)).toBeGreaterThanOrEqual(AA_TEXT);
+      expect(colour.dark[`${name}Text`]).toBe(colour.dark[name]);
+    }
   });
 });
