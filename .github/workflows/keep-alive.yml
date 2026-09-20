@@ -54,6 +54,20 @@ jobs:
       # No `npm ci`. The script is dependency-free by design, so a broken
       # lockfile or a registry outage can never be the reason the database
       # paused. Checkout plus node is the whole job.
+      # TEMPORARY DIAGNOSTIC - removed once we know where the values are.
+      # Prints NAMES only, never values. Variables are non-secret by
+      # definition and GitHub masks secret values in logs regardless.
+      - name: Where are the values
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: |
+          echo "repository: ${{ github.repository }}"
+          echo "--- repository/org VARIABLES visible to this job ---"
+          echo "$VARS_JSON" | jq -r 'keys[]' || echo "(none)"
+          echo "--- SECRETS visible to this job (names only) ---"
+          echo "$SECRETS_JSON" | jq -r 'keys[]' || echo "(none)"
+
       - name: Ping Supabase
         run: node scripts/keep-alive.mjs
         env:
