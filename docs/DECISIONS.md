@@ -567,6 +567,28 @@ toward users, loud toward the one person who can fix it.
   at all until it is merged to `main`, regardless of how correct it is on a
   feature branch.
 
+**Where the credentials live, and the trap in it.** The job reads
+`vars.X || secrets.X`. GitHub keeps variables and secrets one tab apart under
+the same settings page, and `vars.*` reads as an empty string when the value
+went into the other tab — indistinguishable from never having configured it.
+Reading both removes a whole class of setup error. Either store is correct
+here, because both values are public by design (#0003); a value arriving from
+the secret store is masked in the log, so the success line prints `***` for
+the host.
+
+Two separate systems also call this "secrets": Supabase's dashboard has an
+edge function secret store, and values put there are invisible to GitHub
+Actions. Both mistakes were made while setting this up, costing three red
+runs, which is why the script's own error message now names the right store
+explicitly rather than saying "repository variables".
+
+**`deploy.yml` still reads `vars.*` alone.** If the two values live only in
+the Secrets tab, its build step continues to compile with blank Supabase
+config. That is currently harmless — `src/lib/supabase.ts` is imported by
+nobody, so Vite drops it — but the first Phase 3 import turns it into a module
+that throws at load, on a build CI calls green. Either move the values to the
+Variables tab or give `deploy.yml` the same fallback before Phase 3.
+
 **Revisit if** the project moves to a paid tier (no auto-pause, delete the
 workflow), or to a host with real cron (Vercel, Supabase's own `pg_cron`),
 either of which is a better home for this than a CI runner.

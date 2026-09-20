@@ -49,8 +49,10 @@ if (!url || !anonKey) {
   // A misconfigured job is not a transient failure and retrying cannot fix it.
   console.error(
     'keep-alive: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set.\n' +
-      'In CI these come from repository variables (Settings -> Secrets and\n' +
-      'variables -> Actions -> Variables), the same two the deploy job builds with.',
+      'In CI they come from GitHub (Settings -> Secrets and variables ->\n' +
+      'Actions), from EITHER the Variables or the Secrets tab -- the workflow\n' +
+      'reads both. Note this is GitHub\'s store, not the Supabase dashboard\'s\n' +
+      'edge function secrets, which Actions cannot read.',
   );
   process.exit(1);
 }

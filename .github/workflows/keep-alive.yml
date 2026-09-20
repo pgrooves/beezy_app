@@ -54,27 +54,19 @@ jobs:
       # No `npm ci`. The script is dependency-free by design, so a broken
       # lockfile or a registry outage can never be the reason the database
       # paused. Checkout plus node is the whole job.
-      # TEMPORARY DIAGNOSTIC - removed once we know where the values are.
-      # Variable NAMES only, plus booleans for the secret slots. Nothing
-      # here can print a secret value.
-      - name: Where are the values
-        env:
-          VARS_JSON: ${{ toJSON(vars) }}
-        run: |
-          echo "repository: ${{ github.repository }}"
-          echo "--- VARIABLE names visible to this job ---"
-          echo "$VARS_JSON" | jq -r 'keys[]' || echo "(none)"
-          echo "--- is each slot non-empty? ---"
-          echo "vars.VITE_SUPABASE_URL:         ${{ vars.VITE_SUPABASE_URL != '' }}"
-          echo "vars.VITE_SUPABASE_ANON_KEY:    ${{ vars.VITE_SUPABASE_ANON_KEY != '' }}"
-          echo "secrets.VITE_SUPABASE_URL:      ${{ secrets.VITE_SUPABASE_URL != '' }}"
-          echo "secrets.VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY != '' }}"
-
       - name: Ping Supabase
         run: node scripts/keep-alive.mjs
         env:
-          # The same repository variables the deploy job builds with. These are
-          # variables, not secrets: the anon key is public by design and ships
-          # in the client bundle. See docs/DECISIONS.md#0003.
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Variable first, secret as a fallback, because GitHub offers two
+          # stores one tab apart and `vars.*` silently reads empty when the
+          # value went into the other one. That empty string is indistinguish-
+          # able from "never configured", which cost three red runs here.
+          #
+          # Either store is correct for these two: both values are public by
+          # design and ship in the client bundle (docs/DECISIONS.md#0003), so
+          # nothing is weakened by reading a secret, and nothing is leaked by
+          # reading a variable. Note that a value arriving from the secret
+          # store is masked in the log, so the success line prints *** in
+          # place of the host.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
