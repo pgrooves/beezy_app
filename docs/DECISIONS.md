@@ -572,9 +572,11 @@ toward users, loud toward the one person who can fix it.
 the same settings page, and `vars.*` reads as an empty string when the value
 went into the other tab — indistinguishable from never having configured it.
 Reading both removes a whole class of setup error. Either store is correct
-here, because both values are public by design (#0003); a value arriving from
-the secret store is masked in the log, so the success line prints `***` for
-the host.
+here, because both values are public by design (#0003). Masking does not
+affect the success line either way: GitHub redacts a secret's exact string,
+and the line prints only the host, which is a substring of the URL and so
+comes through in clear. That was measured rather than assumed — the first
+green run logged the host plainly with both values in the Secrets tab.
 
 Two separate systems also call this "secrets": Supabase's dashboard has an
 edge function secret store, and values put there are invisible to GitHub

@@ -65,8 +65,9 @@ jobs:
           # Either store is correct for these two: both values are public by
           # design and ship in the client bundle (docs/DECISIONS.md#0003), so
           # nothing is weakened by reading a secret, and nothing is leaked by
-          # reading a variable. Note that a value arriving from the secret
-          # store is masked in the log, so the success line prints *** in
-          # place of the host.
+          # reading a variable. Masking does not hide the success line either
+          # way: GitHub redacts a secret's exact string, and the line prints
+          # only the host, which is a substring of the URL. Measured, not
+          # assumed -- run 7 logged the host in clear from the secret store.
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
