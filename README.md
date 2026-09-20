@@ -69,6 +69,7 @@ npm run build && npm run preview
 | `npm test` | Vitest, including boundary enforcement regression tests |
 | `npm run tokens` | Regenerate `src/theme/tokens.css` from `tokens.ts` |
 | `npm run brand` | Regenerate icons, logos and splashes from `assets/brand-src/` |
+| `npm run keep-alive` | One cheap Supabase read, so the free-tier project is not auto-paused |
 
 ---
 

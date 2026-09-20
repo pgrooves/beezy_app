@@ -506,6 +506,84 @@ themes.
 
 ---
 
+## 0019 — The database is kept awake by a scheduled read, outside the app
+
+**Date:** 2026-09-20 · **Status:** Active
+
+**Context.** A free-tier Supabase project is paused after a stretch with no
+activity, and it does not restart on its own — someone has to press restore in
+the dashboard. The beta's usage pattern is exactly the one that triggers this:
+a handful of testers opening the app irregularly, with quiet weeks between
+rounds. The failure is silent until it is loud — a tester taps the icon and
+every query fails, which reads as a broken app rather than a dormant project.
+
+**Decision.** A scheduled GitHub Actions workflow
+(`.github/workflows/keep-alive.yml`) runs `scripts/keep-alive.mjs` every third
+day. It issues one unauthenticated `GET /rest/v1/services?select=id&limit=1`
+and exits.
+
+Four things about it are deliberate:
+
+1. **It is not part of the app.** Not a module, not an import, not a build
+   step. Nothing in `src/` changed to add it, so there is no code path by
+   which a keep-alive failure can reach a bundle, a deploy, or a user's
+   session. The app does not know it exists.
+
+2. **It reads `services`, and adds no table.** That table already carries an
+   anon-readable policy, because the service menu must be browsable signed out
+   (see #0003 and `0002_private_schema_helpers.sql`). A dedicated `keep_alive`
+   table — the obvious first instinct — would mean a migration and a fresh RLS
+   policy granting the anon role read access to something new, which is more
+   public attack surface bought for exactly the same round-trip. The cheapest
+   schema change is the one not made.
+
+3. **It has no dependencies.** One `fetch` against PostgREST is what
+   `@supabase/supabase-js` issues underneath anyway, so the job is a checkout
+   and a `node` invocation — no `npm ci`. A lockfile conflict or a registry
+   outage cannot be the reason the database paused.
+
+4. **It is its own workflow, not a job in CI & Deploy.** A keep-alive run never
+   appears among the logs anyone reads to judge a push, and can never turn the
+   deploy pipeline red.
+
+**On "fail silently".** The script retries three times with backoff, and a
+transient blip costs nothing. But a *persistent* failure exits non-zero and
+turns that run red. A keep-alive that swallows its own errors is the worst
+available design: the database pauses on schedule anyway and nothing ever
+said so, which is the precise failure this entry exists to prevent. The
+blast radius of that red run is one workflow's history and an email to the
+repo owner — the app and the deploy job are untouched either way. Silent
+toward users, loud toward the one person who can fix it.
+
+**Two things that will switch this off, neither of them visible in the code.**
+
+- **GitHub disables scheduled workflows in a repository with no commits for
+  60 days.** This is the sharp edge: a project quiet enough to need a
+  keep-alive is a project quiet enough to lose one. GitHub emails the repo
+  admin before it happens; the fix is to re-enable the workflow in the
+  Actions tab, or push anything. Worth checking on any return to a long-idle
+  repo — before concluding the database pause was unexplained.
+- **`schedule:` only fires on the default branch.** The workflow does nothing
+  at all until it is merged to `main`, regardless of how correct it is on a
+  feature branch.
+
+**Revisit if** the project moves to a paid tier (no auto-pause, delete the
+workflow), or to a host with real cron (Vercel, Supabase's own `pg_cron`),
+either of which is a better home for this than a CI runner.
+
+**Verified.** The success path was run against a stub PostgREST on loopback:
+exactly one request, correct path and `apikey`/`authorization` headers, one
+line of output, exit 0, no key printed. The retry-and-fail path was run twice,
+against a blocked host and against a stub returning 401: three attempts, 2s
+and 8s backoff, one line per retry, exit 1, and the key absent from the output
+in both. Missing configuration exits 1 immediately without retrying. That the
+`anon` role really can read `services` under RLS was confirmed on the live
+database with `set local role anon`, which returned a row. Typecheck, lint, 82
+tests, the build, 9 asset checks and 30 PWA checks were all green afterwards,
+and `keep-alive` appears nowhere in `dist/`.
+
+---
+
 ## Open — Nav labels fail AA over photography
 
 **Date:** 2026-09-14 · **Status:** Open, found by #0017

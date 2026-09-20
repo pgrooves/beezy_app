@@ -18,7 +18,8 @@
     "fonts": "node scripts/fetch-fonts.mjs",
     "check:pwa": "node scripts/check-pwa.mjs",
     "tour": "node scripts/tour.mjs",
-    "check:assets": "node scripts/check-assets.mjs"
+    "check:assets": "node scripts/check-assets.mjs",
+    "keep-alive": "node scripts/keep-alive.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

@@ -1,0 +1,64 @@
+name: Supabase keep-alive
+
+# A free-tier Supabase project pauses after a stretch with no activity, and it
+# does not come back on its own — someone has to press restore in the
+# dashboard. For a beta that testers open irregularly, the first symptom is a
+# tester opening the app to find every query failing. One cheap read every
+# three days resets that timer.
+#
+# This is deliberately its own workflow rather than a job inside CI & Deploy:
+# nothing here can turn the deploy pipeline red, and a run of this never
+# appears in the logs anyone reads to judge a push.
+
+on:
+  schedule:
+    # Every third day at 07:17 UTC (~2am New Orleans), off the hour because
+    # GitHub delays schedules that land on a busy :00 boundary.
+    #
+    # Day-of-month `*/3` restarts each month, so the interval is not a true
+    # rolling 72 hours: it fires on the 1st, 4th, ... 31st, and the counter
+    # resets at the month boundary. Measured across 2026-2027 that yields a
+    # gap of exactly 3 days, or 1 day where a month ends on a fire date
+    # (the 31st, and February's 28th) — never longer than 3. Cron has no
+    # fixed-interval form, and shorter gaps cost nothing.
+    - cron: '17 7 */3 * *'
+  # So it can be run by hand after restoring a paused project, or to check the
+  # credentials without waiting three days.
+  workflow_dispatch:
+
+# Unrelated to the Pages concurrency group — a keep-alive must never cancel,
+# or be cancelled by, a deploy.
+concurrency:
+  group: supabase-keep-alive
+  cancel-in-progress: false
+
+# The job reads one public row from an external service. It needs nothing from
+# the repository beyond the script itself.
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Read one row
+    runs-on: ubuntu-latest
+    # Guard against forks: a fork's schedule would run against variables it
+    # does not have and fail every three days in someone else's Actions tab.
+    if: github.repository == 'pgrooves/beezy_app'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No `npm ci`. The script is dependency-free by design, so a broken
+      # lockfile or a registry outage can never be the reason the database
+      # paused. Checkout plus node is the whole job.
+      - name: Ping Supabase
+        run: node scripts/keep-alive.mjs
+        env:
+          # The same repository variables the deploy job builds with. These are
+          # variables, not secrets: the anon key is public by design and ships
+          # in the client bundle. See docs/DECISIONS.md#0003.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
