@@ -5,7 +5,8 @@
  * paused project does not wake on its own — it needs someone to press restore
  * in the dashboard. For a beta that testers open irregularly that is a real
  * failure mode: the tester taps the icon, every query 503s, and the app looks
- * broken. A read every few days resets that timer.
+ * broken. A few reads a day keep it counted as active (every three days was
+ * tried first and was not enough -- see docs/DECISIONS.md#0019).
  *
  * This is deliberately NOT part of the app. It is a standalone Node script run
  * by .github/workflows/keep-alive.yml on a schedule, so nothing here can reach
