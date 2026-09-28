@@ -518,8 +518,8 @@ rounds. The failure is silent until it is loud — a tester taps the icon and
 every query fails, which reads as a broken app rather than a dormant project.
 
 **Decision.** A scheduled GitHub Actions workflow
-(`.github/workflows/keep-alive.yml`) runs `scripts/keep-alive.mjs` every third
-day. It issues one unauthenticated `GET /rest/v1/services?select=id&limit=1`
+(`.github/workflows/keep-alive.yml`) runs `scripts/keep-alive.mjs` every four
+hours. It issues one unauthenticated `GET /rest/v1/services?select=id&limit=1`
 and exits.
 
 Four things about it are deliberate:
@@ -554,6 +554,19 @@ said so, which is the precise failure this entry exists to prevent. The
 blast radius of that red run is one workflow's history and an email to the
 repo owner — the app and the deploy job are untouched either way. Silent
 toward users, loud toward the one person who can fix it.
+
+**Amended 2026-09-28: every third day was not enough.** The original schedule
+ran every third day. Runs on 09-22 and 09-25 both succeeded against the right
+project (the log names its host and returned a row), and Supabase paused it on
+09-28 regardless. Supabase does not pause on *zero* activity but on
+*insufficient* activity: its docs say "typically a few user requests to the
+database each day over the previous week is enough", and two reads in a week
+evidently fell below that bar. The schedule is now every four hours — six
+reads a day — which also absorbs GitHub's unreliable cron: the 07:17 slot was
+observed starting about five hours late, and GitHub may skip scheduled runs
+under load. A green keep-alive run proves reachability, not that the project
+counts as active; the project's status in the Supabase dashboard is the only
+real check.
 
 **Two things that will switch this off, neither of them visible in the code.**
 

@@ -1,29 +1,30 @@
 name: Supabase keep-alive
 
-# A free-tier Supabase project pauses after a stretch with no activity, and it
-# does not come back on its own — someone has to press restore in the
-# dashboard. For a beta that testers open irregularly, the first symptom is a
-# tester opening the app to find every query failing. One cheap read every
-# three days resets that timer.
+# A free-tier Supabase project pauses after a week without "sufficient" user
+# database activity, and it does not come back on its own — someone has to
+# press restore in the dashboard. For a beta that testers open irregularly, the
+# first symptom is a tester opening the app to find every query failing.
 #
+# One read every three days was NOT enough: runs on 09-22 and 09-25 both
+# succeeded against the right project, and it was paused on 09-28 anyway.
+# Supabase's own guidance is "a few user requests to the database each day over
+# the previous week" (docs: platform/free-project-pausing), so this reads
+# several times a day. See docs/DECISIONS.md#0019.
+
 # This is deliberately its own workflow rather than a job inside CI & Deploy:
 # nothing here can turn the deploy pipeline red, and a run of this never
 # appears in the logs anyone reads to judge a push.
 
 on:
   schedule:
-    # Every third day at 07:17 UTC (~2am New Orleans), off the hour because
-    # GitHub delays schedules that land on a busy :00 boundary.
-    #
-    # Day-of-month `*/3` restarts each month, so the interval is not a true
-    # rolling 72 hours: it fires on the 1st, 4th, ... 31st, and the counter
-    # resets at the month boundary. Measured across 2026-2027 that yields a
-    # gap of exactly 3 days, or 1 day where a month ends on a fire date
-    # (the 31st, and February's 28th) — never longer than 3. Cron has no
-    # fixed-interval form, and shorter gaps cost nothing.
-    - cron: '17 7 */3 * *'
+    # Every four hours at :17, off the hour because GitHub delays schedules
+    # that land on a busy :00 boundary. Six reads a day, not one: GitHub makes
+    # no promise a scheduled run fires on time or at all (the 07:17 runs here
+    # started ~5h late), so the margin comes from volume rather than from
+    # trusting any single run. A public repo's Actions minutes are free.
+    - cron: '17 */4 * * *'
   # So it can be run by hand after restoring a paused project, or to check the
-  # credentials without waiting three days.
+  # credentials without waiting for the next slot.
   workflow_dispatch:
 
 # Unrelated to the Pages concurrency group — a keep-alive must never cancel,
@@ -42,7 +43,7 @@ jobs:
     name: Read one row
     runs-on: ubuntu-latest
     # Guard against forks: a fork's schedule would run against variables it
-    # does not have and fail every three days in someone else's Actions tab.
+    # does not have and fail six times a day in someone else's Actions tab.
     if: github.repository == 'pgrooves/beezy_app'
     steps:
       - uses: actions/checkout@v4
