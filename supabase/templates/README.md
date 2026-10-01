@@ -16,3 +16,10 @@ app signs in by code (docs/DECISIONS.md#0021).
 Set the SMTP **sender name** to `Beezy` so the inbox shows Beezy, not Supabase.
 The logo loads from the live Pages site, so it must stay at
 `/beezy_app/brand/logo-horizontal-ink.png`.
+
+## Current sender
+
+Temporary, until the handover: `pocketgroovespublishing@gmail.com` via Gmail
+SMTP — host `smtp.gmail.com`, port `587`, username the same address, password
+a Google app password for that account, sender name `Beezy`. The permanent
+sender is tracked in docs/PROGRESS.md item 1.

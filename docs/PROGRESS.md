@@ -35,15 +35,19 @@ Nothing below can be done by Claude: each needs a login only Trey or
 Brandon holds. Until items 1 and 2 are done, **nobody can sign in to the
 app** — the code, database and deploy are ready and waiting.
 
-- [ ] **1. Choose the sign-in email sender and set up custom SMTP.**
-      Supabase's built-in mailer only reaches the project's own team and
-      sends a few emails an hour. Options, decided at the handover:
-      the Beezy Gmail (`beezyluxurydetailing@gmail.com`, needs an app
-      password from that account), Trey's `trey@pgrooves.com` (needs that
-      provider's SMTP settings), or a domain-verified service such as
-      Resend (needs DNS access — see *Open — Outbound email sending domain*
-      in DECISIONS.md). Set in Supabase → Authentication → Emails → SMTP
-      Settings. [DECISIONS.md#0021](DECISIONS.md)
+- [ ] **1a. Temporary sender (decided 2026-10-01):** sign-in emails send
+      from `pocketgroovespublishing@gmail.com` with sender name `Beezy`, via
+      Gmail SMTP (`smtp.gmail.com`, port 587, app password from that
+      account) until the handover. Trey sets this up; tick when a code email
+      has arrived. Steps in the conversation summary and in
+      `supabase/templates/README.md`.
+- [ ] **1. Permanent sender at the handover.** Replace the temporary Gmail
+      SMTP with Beezy's own address. Options: the Beezy Gmail
+      (`beezyluxurydetailing@gmail.com`, app password from that account), or
+      a domain-verified service such as Resend (needs DNS access — see
+      *Open — Outbound email sending domain* in DECISIONS.md). Supabase →
+      Authentication → Emails → SMTP Settings; the templates need no change.
+      [DECISIONS.md#0021](DECISIONS.md)
 - [ ] **2. Paste in the branded sign-in emails.** Ready in
       `supabase/templates/` (see its README): Beezy logo, the code in large
       type, no link, no mention of Supabase. Only editable once SMTP is on.
