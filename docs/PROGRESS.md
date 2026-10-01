@@ -10,7 +10,7 @@ moment it is discovered, and keep the "Next up" section true. Reasoning
 belongs in [DECISIONS.md](DECISIONS.md); this file links to it rather than
 repeating it.
 
-_Last updated: 2026-10-01 — Phase 3 merged to `main` and deployed (commit `266a5a8`)._
+_Last updated: 2026-10-01 — Phase 3 deployed; anonymisation trigger live. Only the credentials handover remains._
 
 ---
 
@@ -20,7 +20,7 @@ _Last updated: 2026-10-01 — Phase 3 merged to `main` and deployed (commit `266
 |---|---|---|
 | 1 | Repo, PWA pipeline, CI → Pages, Supabase base schema, docs | Done |
 | 2 | Navigable shell on fixtures | Done |
-| 3 | Supabase auth, real data, account deletion | **Code done and deployed.** Sign-in is blocked on the credentials items below |
+| 3 | Supabase auth, real data, account deletion | **Done and deployed.** Sign-in waits only on the credentials handover below |
 | 4 | Square deposits, Google Calendar, confirmation email | Next — can be built before the credentials arrive (see below) |
 | 5 | Today, Schedule, Jobs pipeline, Clients, photo checklists | |
 | 6 | Subscriptions | |
@@ -59,7 +59,7 @@ app** — the code, database and deploy are ready and waiting.
 
 ## Waiting on Trey (no credentials needed)
 
-- [ ] **5. Run the anonymisation trigger SQL** in the Supabase SQL editor
+- [x] **5. Run the anonymisation trigger SQL** — _done 2026-10-01 by Trey; trigger `profiles_anonymise_bookings` confirmed live and enabled._ in the Supabase SQL editor
       (https://supabase.com/dashboard/project/bdbarnvjktpfdogcfjvx/sql/new).
       The Supabase MCP connector cannot run it from a session — it holds any
       statement that deletes rows for a confirmation that never arrives
