@@ -34,7 +34,7 @@ reporting. Role is resolved at auth time and determines the entire shell.
 |---|---|---|
 | 1 | Repo, PWA pipeline, CI → Pages, Supabase base schema, docs | Done |
 | 2 | Navigable shell: both tab bars, every screen, live pricing on fixtures | Done |
-| 3 | Supabase auth, real data, account deletion | **Done** — one manual SQL step outstanding (DECISIONS.md#0023) |
+| 3 | Supabase auth, real data, account deletion | **Done** — sign-in waits on the credentials items in [PROGRESS.md](docs/PROGRESS.md) |
 | 4 | Square deposits, Google Calendar, confirmation email | Next |
 | 5 | Today, Schedule, Jobs pipeline, Clients, photo checklists | |
 | 6 | Subscriptions | |
@@ -114,6 +114,7 @@ See [`docs/DECISIONS.md`](docs/DECISIONS.md) for why.
 
 | Document | Contents |
 |---|---|
+| [PROGRESS.md](docs/PROGRESS.md) | **The progress ledger:** phase status, items waiting on credentials, what's next |
 | [COMPLIANCE.md](docs/COMPLIANCE.md) | Per-guideline store readiness and pre-submission tasks |
 | [DECISIONS.md](docs/DECISIONS.md) | Architecture decisions and their reasoning |
 | [DATA_MODEL.md](docs/DATA_MODEL.md) | Schema plus the field-level collection inventory |
