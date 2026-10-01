@@ -33,8 +33,8 @@ reporting. Role is resolved at auth time and determines the entire shell.
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Repo, PWA pipeline, CI → Pages, Supabase base schema, docs | Done |
-| 2 | Navigable shell: both tab bars, every screen, live pricing on fixtures | **Done** |
-| 3 | Supabase auth, real data, account deletion | Next |
+| 2 | Navigable shell: both tab bars, every screen, live pricing on fixtures | Done |
+| 3 | Supabase auth, real data, account deletion | **In progress** — sign-in, roles, profile, deletion done; garage and bookings on real data next |
 | 4 | Square deposits, Google Calendar, confirmation email | |
 | 5 | Today, Schedule, Jobs pipeline, Clients, photo checklists | |
 | 6 | Subscriptions | |
@@ -70,6 +70,7 @@ npm run build && npm run preview
 | `npm run tokens` | Regenerate `src/theme/tokens.css` from `tokens.ts` |
 | `npm run brand` | Regenerate icons, logos and splashes from `assets/brand-src/` |
 | `npm run keep-alive` | One cheap Supabase read, so the free-tier project is not auto-paused |
+| `supabase/tests/run.sh` | Apply every migration to a scratch Postgres and run the RLS tests (needs `PGHOST` etc.) |
 
 ---
 
@@ -87,6 +88,8 @@ src/
 assets/brand-src/  Logo and photo masters. Committed, never published.
 public/         Generated assets, privacy policy
 supabase/migrations/  Numbered SQL. Never edited once applied.
+supabase/functions/   Edge functions. The only home for secrets.
+supabase/tests/       Policy tests, run in CI against plain Postgres
 docs/           Compliance, decisions, data model, design system, testing
 scripts/        Token and brand asset generation
 ```

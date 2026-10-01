@@ -51,10 +51,19 @@ jobs:
           fi
 
       - name: Build
-        run: npm run build
+        # Both values are public by design (DECISIONS.md#0003), so either
+        # store is correct; reading both removes the Variables-vs-Secrets tab
+        # mistake (#0019). A build without them would ship an app where nobody
+        # can sign in while every check stays green, so refuse to make one.
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are not set in Settings → Secrets and variables → Actions (Variables or Secrets tab)."
+            exit 1
+          fi
+          npm run build
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Verify referenced images shipped
         # A fixture pointing at a photo that was never added renders a broken
@@ -71,6 +80,30 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
+  policies:
+    name: Database policies
+    # Applies every migration to a plain Postgres and runs the RLS tests as
+    # the real roles. This is the check that proves the anon key is safe to
+    # ship (DECISIONS.md#0003), so it runs on every PR, not just against prod.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations and run policy tests
+        run: supabase/tests/run.sh
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
 
   lighthouse:
     name: Lighthouse PWA audit
@@ -89,8 +122,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Serve and audit
         # Mirror the real Pages layout — the site lives under /<repo>/, and
@@ -111,7 +144,7 @@ jobs:
     name: Deploy to Pages
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [verify, policies]
     permissions:
       pages: write
       id-token: write

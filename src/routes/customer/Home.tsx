@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Button, Card, Chip, Screen, ScreenHeader, SectionHeader, Stat } from '../../components/ui';
+import { Button, Card, Chip, DemoNote, Screen, ScreenHeader, SectionHeader, Stat } from '../../components/ui';
+import { useSession } from '../../app/session';
+import { firstName } from '../../core/profile';
 import { assetUrl } from '../../lib/assets';
 import { formatMoney } from '../../core/pricing';
 import {
@@ -27,15 +29,24 @@ function countdown(iso: string): string {
 }
 
 export default function Home() {
+  const status = useSession((s) => s.status);
+  const profile = useSession((s) => s.profile);
+
+  // Nothing until the stored session is read back, so a signed-in customer
+  // never sees the signed-out welcome flash past on launch.
+  if (status === 'loading') return null;
+  if (status !== 'signedIn') return <Welcome />;
+
   const next = BOOKINGS.find((b) => b.status === 'confirmed');
   const past = BOOKINGS.filter((b) => b.status === 'paid');
   const lastService = past[0];
   const plan = PLANS.find((p) => p.tier === DEMO_SUBSCRIPTION.planTier);
   const pair = photoPairs()[0];
+  const name = profile ? firstName(profile) : '';
 
   return (
     <Screen>
-      <ScreenHeader eyebrow="Good to see you" title="Marcus" />
+      <ScreenHeader eyebrow="Good to see you" title={name || 'Welcome back'} />
 
       <div className="h-[var(--space-lg)]" />
 
@@ -77,6 +88,63 @@ export default function Home() {
           <LastService booking={lastService} beforeAfter={pair} />
         </>
       )}
+
+      <DemoNote>
+        The appointment, membership and last service above are examples. Your own appear here
+        once booking is connected to your account.
+      </DemoNote>
+    </Screen>
+  );
+}
+
+/**
+ * Signed out. The gallery, menu and About stay open (guideline 5.1.1(iv));
+ * this is the front door to them and to signing in.
+ */
+function Welcome() {
+  const pair = photoPairs()[0];
+  return (
+    <Screen>
+      <ScreenHeader eyebrow="Mobile detailing" title="Beezy" />
+
+      <p className="mt-[var(--space-lg)] text-[17px] leading-[26px] text-[var(--c-ink-muted)]">
+        Make life easy, call Beezy. We come to your driveway anywhere in Greater New Orleans —
+        no water or power needed.
+      </p>
+
+      {pair && (
+        <div className="mt-[var(--space-xl)] overflow-hidden rounded-[var(--radius-card)]">
+          <img
+            src={assetUrl(pair.after.url)}
+            alt="A freshly detailed car"
+            className="aspect-[4/3] w-full object-cover"
+          />
+        </div>
+      )}
+
+      <div className="mt-[var(--space-xl)] space-y-[var(--space-md)]">
+        <Button to="/sign-in" full>
+          Sign in to book
+        </Button>
+        <Button to="/gallery" variant="secondary" full>
+          See the work
+        </Button>
+      </div>
+
+      <SectionHeader title="Beezy" />
+      <Card padded={false}>
+        <div className="flex flex-col px-[var(--space-xl)]">
+          <Link to="/about" className="border-b border-[var(--c-hairline)] py-[var(--space-lg)] text-[15px] leading-[23px]">
+            About Beezy
+          </Link>
+          <Link to="/service-area" className="border-b border-[var(--c-hairline)] py-[var(--space-lg)] text-[15px] leading-[23px]">
+            Service area
+          </Link>
+          <Link to="/faq" className="py-[var(--space-lg)] text-[15px] leading-[23px]">
+            FAQ
+          </Link>
+        </div>
+      </Card>
     </Screen>
   );
 }

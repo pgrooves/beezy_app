@@ -1,10 +1,13 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { Shell } from './Shell';
 import { useSession, isStaff } from './session';
 import { useAppearance } from '../theme/useAppearance';
 import { useScrollToTop } from '../lib/platform/hooks';
 import { BOOKING_STEPS } from './booking';
 
+import SignIn from '../routes/auth/SignIn';
+import ProfileScreen from '../routes/account/Profile';
 import Home from '../routes/customer/Home';
 import Garage, { VehicleDetail } from '../routes/customer/Garage';
 import Gallery from '../routes/customer/Gallery';
@@ -27,7 +30,6 @@ import {
   MessagesScreen,
   NotificationsScreen,
   PlanScreen,
-  ProfileScreen,
   ReferralScreen,
   ServiceAreaScreen,
 } from '../routes/customer/more';
@@ -64,27 +66,31 @@ export default function App() {
       <ScrollToTop />
       <Routes>
         <Route element={<Shell />}>
-          {/* Customer */}
+          {/* Open to everyone. Guideline 5.1.1(iv): content that does not
+              need an account must not sit behind one. */}
           <Route path="/" element={<Home />} />
-          <Route path="/garage" element={<Garage />} />
-          <Route path="/garage/:vehicleId" element={<VehicleDetail />} />
+          <Route path="/sign-in" element={<SignIn />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="/booking/:bookingId" element={<BookingDetail />} />
-          <Route path="/plan" element={<PlanScreen />} />
-          <Route path="/invoices" element={<InvoicesScreen />} />
-          <Route path="/messages" element={<MessagesScreen />} />
-          <Route path="/referral" element={<ReferralScreen />} />
           <Route path="/about" element={<AboutScreen />} />
           <Route path="/service-area" element={<ServiceAreaScreen />} />
           <Route path="/faq" element={<FaqScreen />} />
           <Route path="/settings/appearance" element={<AppearanceScreen />} />
-          <Route path="/settings/notifications" element={<NotificationsScreen />} />
-          <Route path="/settings/profile" element={<ProfileScreen />} />
+
+          {/* Account-bound: garage, bookings, money, and the account itself. */}
+          <Route path="/garage" element={<SignedIn><Garage /></SignedIn>} />
+          <Route path="/garage/:vehicleId" element={<SignedIn><VehicleDetail /></SignedIn>} />
+          <Route path="/booking/:bookingId" element={<SignedIn><BookingDetail /></SignedIn>} />
+          <Route path="/plan" element={<SignedIn><PlanScreen /></SignedIn>} />
+          <Route path="/invoices" element={<SignedIn><InvoicesScreen /></SignedIn>} />
+          <Route path="/messages" element={<SignedIn><MessagesScreen /></SignedIn>} />
+          <Route path="/referral" element={<SignedIn><ReferralScreen /></SignedIn>} />
+          <Route path="/settings/notifications" element={<SignedIn><NotificationsScreen /></SignedIn>} />
+          <Route path="/settings/profile" element={<SignedIn><ProfileScreen /></SignedIn>} />
 
           {/* Booking flow — its own full-screen layout inside the shell.
               One route with an index child, not two siblings sharing /book:
               duplicate sibling paths are ambiguous and the wrong one wins. */}
-          <Route path="/book" element={<BookLayout />}>
+          <Route path="/book" element={<SignedIn><BookLayout /></SignedIn>}>
             <Route index element={<Navigate to={BOOKING_STEPS[0].path} replace />} />
             <Route path="service" element={<StepService />} />
             <Route path="vehicle" element={<StepVehicle />} />
@@ -128,23 +134,38 @@ export default function App() {
 }
 
 /**
+ * Sends a signed-out visitor to sign in, and back here afterwards.
+ *
+ * Renders nothing while the stored session is read back: redirecting before
+ * it resolves would bounce a signed-in customer to /sign-in on every reload.
+ */
+function SignedIn({ children }: { children: ReactNode }) {
+  const status = useSession((s) => s.status);
+  const location = useLocation();
+
+  if (status === 'loading') return null;
+  if (status !== 'signedIn') {
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/sign-in?next=${next}`} replace />;
+  }
+  return <>{children}</>;
+}
+
+/**
  * Guards an admin surface.
  *
  * `staffOnly` marks the screens a tech must not see either — anything with
  * revenue, client records or business settings on it. Techs get Today and
  * their own jobs and nothing else.
+ *
+ * This is navigation, not security. The data behind these screens is guarded
+ * by RLS, which returns a customer nothing however they reach the route.
  */
-function StaffOnly({ children, staffOnly }: { children: React.ReactNode; staffOnly?: boolean }) {
+function StaffOnly({ children, staffOnly }: { children: ReactNode; staffOnly?: boolean }) {
   const role = useSession((s) => s.role);
-  const hydrated = useSession((s) => s.hydrated);
-
-  // Role is read from storage asynchronously; redirecting before it resolves
-  // would bounce a legitimate admin back to the customer home on every reload.
-  if (!hydrated) return null;
 
   const allowed = staffOnly ? isStaff(role) : isStaff(role) || role === 'tech';
-  if (!allowed) return <Navigate to="/" replace />;
-  return <>{children}</>;
+  return <SignedIn>{allowed ? children : <Navigate to="/" replace />}</SignedIn>;
 }
 
 /** A pushed screen should start at the top, not wherever the last one was. */

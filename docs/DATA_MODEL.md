@@ -19,7 +19,7 @@ Migrations live in `supabase/migrations/`, numbered, never edited once applied.
 | `profiles` | One row per auth user. Role drives the shell and every policy. | 0001 |
 | `services` | The service menu. Seeded from beezynola.com. | 0001 |
 | `vehicles` | The car, not just the customer. | 0001 |
-| `tester_allowlist` | Beta signup gate. **Remove before submission.** | 0001 |
+| `tester_allowlist` | Beta signup gate, enforced by a trigger on `auth.users` since 0004. **Remove before submission.** | 0001, 0004 |
 
 ### Planned
 
@@ -60,6 +60,12 @@ Phase 8, so RLS is written once rather than retrofitted.
 
 Helpers `private.is_staff()` and `private.is_owner()` live in the `private`
 schema so they are unreachable over PostgREST (DECISIONS.md#0005).
+
+**Role is never client-writable.** Since 0004 the client may update only
+`full_name`, `phone` and `gallery_consent` on `profiles` — a column
+privilege, checked before any policy. Role changes go through an edge
+function with the service role (DECISIONS.md#0020). Every policy is
+exercised as the real roles by `supabase/tests/rls.test.sql`, in CI.
 
 ---
 
@@ -157,4 +163,4 @@ and an entry here in the same commit.
 | Condition photos | 24 months, then purged |
 | Before/after on completed jobs | 24 months (dispute window), then purged unless consented to the gallery |
 | Financial records | 7 years, anonymised after account deletion |
-| Deleted account tombstone (`deleted_at`) | Indefinite — an id and a timestamp, no PII |
+| Deleted account tombstone (`deleted_at`) | Indefinite — an id and a timestamp, no PII. Only once bookings exist to anchor it; today deletion removes the profile row outright |

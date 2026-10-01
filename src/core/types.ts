@@ -158,6 +158,20 @@ export interface Job {
 // People
 // ---------------------------------------------------------------------------
 
+/** The signed-in person's own record — `public.profiles`. */
+export interface Profile {
+  id: string;
+  role: Role;
+  email: string;
+  fullName: string;
+  phone: string;
+  /** Consent to publish their before/after pairs in the public gallery. */
+  galleryConsent: boolean;
+}
+
+/** The fields a person may change about themselves. Role is never one. */
+export type ProfilePatch = Partial<Pick<Profile, 'fullName' | 'phone' | 'galleryConsent'>>;
+
 export type ClientTag = 'vip' | 'fleet' | 'recurring' | 'lapsed';
 
 export interface Client {

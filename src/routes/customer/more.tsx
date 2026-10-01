@@ -489,39 +489,3 @@ export function NotificationsScreen() {
     </Screen>
   );
 }
-
-export function ProfileScreen() {
-  return (
-    <Screen>
-      <ScreenHeader eyebrow="Settings" title="Profile" />
-      <Card padded={false}>
-        <div className="px-[var(--space-xl)]">
-          <ListRow label="Name" trailing={<span className="text-[14px] text-[var(--c-ink-muted)]">Marcus Boudreaux</span>} />
-          <ListRow label="Email" trailing={<span className="text-[14px] text-[var(--c-ink-muted)]">marcus@example.com</span>} />
-          <ListRow label="Phone" trailing={<span className="tabular text-[14px] text-[var(--c-ink-muted)]">(504) 555-0142</span>} />
-        </div>
-      </Card>
-
-      <SectionHeader title="Account" />
-      <Card padded={false}>
-        <div className="px-[var(--space-xl)]">
-          <ListRow label="Privacy policy" detail="Opens in your browser" onClick={() => {}} />
-          <ListRow label="Sign out" onClick={() => {}} />
-          {/* Both stores require in-app deletion, reachable without emailing
-              anyone. It is built here rather than deferred. */}
-          <ListRow
-            label="Delete account"
-            detail="Removes your vehicles, photos and details"
-            danger
-            onClick={() => {}}
-          />
-        </div>
-      </Card>
-
-      <DemoNote>
-        Sign-in and account deletion need Supabase auth. Deletion is a store requirement on both
-        platforms, so it ships with that work rather than later.
-      </DemoNote>
-    </Screen>
-  );
-}

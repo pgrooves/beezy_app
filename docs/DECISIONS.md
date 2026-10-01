@@ -303,7 +303,7 @@ repo-name check is skipped by the `BASE_PATH` override.
 
 ## 0012 — The shell is built on fixtures, and says so on screen
 
-**Date:** 2026-09-14 · **Status:** Active
+**Date:** 2026-09-14 · **Status:** Active (role switcher removed in Phase 3, see 0021)
 
 **Context.** The whole app needed to be walkable before any third-party
 integration existed, so every screen could be judged as a product rather than
@@ -597,7 +597,9 @@ Actions. Both mistakes were made while setting this up, costing three red
 runs, which is why the script's own error message now names the right store
 explicitly rather than saying "repository variables".
 
-**`deploy.yml` still reads `vars.*` alone.** If the two values live only in
+**`deploy.yml` still reads `vars.*` alone.** *(Fixed in Phase 3: both build
+steps now read `vars.X || secrets.X`, and the verify build refuses to run
+with either value empty.)* If the two values live only in
 the Secrets tab, its build step continues to compile with blank Supabase
 config. That is currently harmless — `src/lib/supabase.ts` is imported by
 nobody, so Vite drops it — but the first Phase 3 import turns it into a module
@@ -618,6 +620,154 @@ in both. Missing configuration exits 1 immediately without retrying. That the
 database with `set local role anon`, which returned a row. Typecheck, lint, 82
 tests, the build, 9 asset checks and 30 PWA checks were all green afterwards,
 and `keep-alive` appears nowhere in `dist/`.
+
+---
+
+## 0020 — Role is not client-writable, the allowlist is enforced, and policies are tested in CI
+
+**Date:** 2026-10-01 · **Status:** Active · Migration `0004_auth_go_live.sql`
+
+**Context.** Reading the schema before switching sign-in on found that any
+signed-in customer could make themselves owner:
+
+```sql
+update profiles set role = 'owner' where id = auth.uid();
+```
+
+`profiles: update own` allowed updating every column of your own row. The
+`profiles: owner manages roles` policy beside it, with a comment saying role
+escalation was blocked, blocked nothing — RLS policies are *permissive* and
+OR together, so a second policy can only add a way in, never take one away.
+Owner unlocks every staff policy in the schema. It was unexploitable only
+because nobody could sign in yet.
+
+The `tester_allowlist` table had the same shape of problem: declared in 0001
+as the beta gate, consulted by nothing. Anyone who found the Pages URL could
+have created an account.
+
+**Decision.**
+
+1. **Column privileges, not policy.** `authenticated` loses table-level
+   `UPDATE` on `profiles` and gets it back on `full_name`, `phone` and
+   `gallery_consent` only. Postgres checks column privileges before any
+   policy runs, so `role`, `email` and `deleted_at` are unwritable from the
+   client whatever the policies say. The misleading owner policy is dropped;
+   a `staff update` policy replaces it for correcting a customer's details,
+   still bound by the same column grant. Role changes go through an edge
+   function with the service role, as 0001 always intended.
+2. **The allowlist is a `BEFORE INSERT` trigger on `auth.users`.** It aborts
+   the signup inside the auth transaction: no user row, no profile, no email
+   to an address that was not invited. Case-insensitive, and the table now
+   only accepts lower-case addresses. A null email (phone or anonymous
+   sign-in) is refused too. It fires on insert only, so taking someone off
+   the list does not lock out an existing account.
+   *PRE-SUBMISSION: drop the trigger and the table* (COMPLIANCE.md, 5.1.1(iv)).
+3. **Policies are tested on every PR.** `supabase/tests/run.sh` applies every
+   migration to a plain Postgres with a small Supabase stand-in
+   (`stub_supabase.sql`: the three roles, `auth.users`, `auth.uid()` reading
+   the same claim GUC, and Supabase's wide-open default grants), then runs
+   `rls.test.sql` as the real roles. The `Database policies` job in CI runs
+   it against `postgres:16`, and deploy now waits on it.
+
+**Why test against default grants.** Supabase grants `anon` and
+`authenticated` everything at the table level and leaves RLS to do the
+work. A stub with tighter grants than production would pass the escalation
+test for the wrong reason.
+
+**Verified.** The suite fails on the pre-0004 schema at exactly the two
+holes — `FAILED: uninvited signup was allowed`, and with the allowlist half
+alone, `FAILED: a customer promoted themselves` — and passes with 0004.
+It also asserts what must keep working: a customer edits their own name,
+phone and consent, sees only their own profile and vehicles, cannot add a
+vehicle to someone else's garage; staff read everything and can correct a
+customer's details; signed out reads the menu and nothing else; deleting
+an auth user cascades to the profile and vehicles and nobody else's.
+
+---
+
+## 0021 — Sign-in is an emailed code, never a link
+
+**Date:** 2026-10-01 · **Status:** Active
+
+**Context.** The obvious passwordless flow is a magic link. On an iPhone
+with the app installed to the Home Screen, tapping that link in Mail opens
+**Safari**, and a Home Screen web app has its own storage separate from
+Safari's. The session lands in the browser; the installed app stays signed
+out. It looks like sign-in is broken, and on iOS there is no workaround.
+
+**Decision.** `signInWithOtp` sends a six-digit code, and the person types it
+into the app that asked for it. The input is `autocomplete="one-time-code"`,
+so iOS offers the code from Mail above the keyboard and most people never
+switch apps. There is no separate sign-up: an invited address gets its
+account on first code. `detectSessionInUrl` is off because no session ever
+arrives in a URL.
+
+The session persists through `platform.storage`, passed to supabase-js as
+its `storage`, rather than supabase-js reaching for `localStorage` itself —
+the native build swaps in secure storage without touching the client. The
+last-read profile is cached beside it, so an installed app opened with no
+signal still draws the right shell for staff.
+
+The preview `RoleSwitcher` (0012) is gone. Role comes from `profiles` and
+nothing on the client can set it. The screenshot tour signs in as each role
+with `scripts/lib/fake-supabase.mjs`, which seeds a session and answers the
+app's Supabase requests in the page, so it still walks every screen with
+nothing reaching the network — and fails a screen on any request it did
+not expect.
+
+**Two settings outside the repo that sign-in depends on.**
+
+- **The email template must contain the code.** Supabase's default
+  *Magic Link* template sends only a link. In the dashboard, Authentication →
+  Emails → *Magic Link*, the body needs `{{ .Token }}`. Without it testers get
+  an email with nothing to type.
+- **The built-in mailer only reaches the project's team.** Until custom SMTP
+  is configured, Supabase refuses every other address with *Email address not
+  authorized*, and caps sending at a few messages an hour. The app says so
+  without blaming the tester. This is the same blocker as *Open — Outbound
+  email sending domain* below, pulled forward from Phase 4: testers cannot
+  sign in until it is resolved. For a closed beta, the Gmail account's own
+  SMTP (an app password on `beezyluxurydetailing@gmail.com`) is a workable
+  bridge — mail sent through Google's servers as the Gmail address passes
+  DMARC, which a third-party sender using that address does not.
+
+**Revisit when** Sign in with Apple and Google are added (COMPLIANCE.md,
+4.8): those are redirect flows with the same Safari problem, and want a
+native build or a popup flow tested on an installed iPhone first.
+
+---
+
+## 0022 — Account deletion is an edge function that can only delete its caller
+
+**Date:** 2026-10-01 · **Status:** Active · `supabase/functions/delete-account`
+
+**Context.** Both stores require in-app deletion. The client cannot delete
+an `auth.users` row, by design, and the service role key that can must
+never ship (0003).
+
+**Decision.** `delete-account` takes no parameters. It resolves the user from
+the caller's own bearer token (`auth.getUser()`, which Auth validates), then
+deletes exactly that user with the service role. Foreign keys do the rest:
+`profiles` cascades from `auth.users`, `vehicles` from `profiles` — asserted
+in `rls.test.sql`. There is no request field naming a user, so there is no
+way to ask it to delete someone else.
+
+It refuses the **owner** account with a 409 and a reason the app shows
+verbatim. The owner is the business; deleting it from a phone would leave
+the portal with nobody able to restore access. Ownership moves first.
+
+When `bookings` and `payments` arrive, completed work must be anonymised,
+not deleted (tax records). That step goes in this function, before the
+delete, in the same change that adds those tables — the cascade alone
+would destroy them.
+
+Reached from ••• → Profile & account → Delete account, with an inline
+confirmation that states what goes and what is kept. On success the app
+clears the session and the profile cache and lands on the signed-out home.
+
+**Verified** in the built app against stubbed responses: a customer's
+deletion calls the function once, clears every `sb-*` key and the profile
+cache, and lands signed out; the owner's is refused with the reason shown.
 
 ---
 
@@ -656,7 +806,7 @@ retune. Left open deliberately.
 
 ## Open — Outbound email sending domain
 
-**Date:** 2026-09-11 · **Status:** Blocked, needed by Phase 4
+**Date:** 2026-09-11 · **Status:** Blocked, **now needed by Phase 3** (sign-in codes, see 0021)
 
 Resend/Postmark verify *domains*, and we do not own `gmail.com`, so
 `beezyluxurydetailing@gmail.com` cannot be a verified sender. Mail sent as
@@ -676,4 +826,7 @@ order:
    deliverability is materially worse and it cannot be fixed later without
    changing the sending address on customers.
 
-Not blocking any earlier phase. Revisit before Phase 4.
+Was not blocking any earlier phase. Since Phase 3 it is: Supabase's built-in
+mailer delivers only to the project's team, so testers cannot receive a
+sign-in code until custom SMTP exists. 0021 describes a Gmail-SMTP bridge
+for the closed beta that does not foreclose options 1 or 2.

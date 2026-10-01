@@ -43,8 +43,26 @@ which version you were on — **include it in every report**.
 
 ## What to test now
 
-The whole app is walkable, running on demo data. Nothing saves, and nothing is
-charged — anything not wired up says so on the screen.
+**Signing in is new.** The app is invite-only during the beta: Beezy adds your
+email first, then you sign in with a code.
+
+- [ ] Signed out, the home screen, Gallery, About, Service area and FAQ all open
+- [ ] Book or Garage asks you to sign in, and brings you back there afterwards
+- [ ] Enter your email → a six-digit code arrives (check spam) → you're in.
+      On iPhone the code should appear above the keyboard
+- [ ] Close the app and reopen it: still signed in
+- [ ] ••• → **Profile & account**: change your name, Save, and it sticks
+- [ ] **Sign out** returns you to the signed-out home
+- [ ] An email that wasn't invited is told so, politely
+- [ ] **Delete account** explains what goes and what's kept before doing it.
+      Only try this on an account you're happy to lose — Beezy will need to
+      invite you again
+
+Beezy's own accounts open straight into Today, Schedule, Jobs and Clients;
+a tech account sees fewer tabs and no money anywhere.
+
+Everything past your profile is still demo data. Nothing you book saves, and
+nothing is charged — anything not wired up says so on the screen.
 
 **The booking flow** is the screen that matters most:
 
@@ -61,14 +79,11 @@ charged — anything not wired up says so on the screen.
 - [ ] The bottom bar floats, and content scrolls *under* it
 - [ ] The gold pill slides between tabs rather than jumping
 - [ ] **•••** opens a sheet, not a page
-- [ ] In that sheet, **Preview as → Owner** switches to Beezy's side of the app
-- [ ] Owner: Today, Schedule, Jobs, Clients, Reporting
-- [ ] **Preview as → Tech**: fewer tabs, and no money anywhere
 
 **Worth a look:** Gallery (drag the before/after slider), Garage, About.
 
-**Not built yet, on purpose:** signing in, saving anything, real photos,
-payments, calendar, email or texts.
+**Not built yet, on purpose:** saving vehicles or bookings, real photos,
+payments, calendar, booking emails or texts.
 
 ---
 

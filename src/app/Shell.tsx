@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { GlassTabBar } from '../components/nav/GlassTabBar';
 import { MoreSheet } from '../components/nav/MoreSheet';
-import { RoleSwitcher } from '../components/dev/RoleSwitcher';
+import { AccountFooter } from '../components/nav/AccountFooter';
 import { UpdatePrompt } from '../components/UpdatePrompt';
 import { useSession } from './session';
 import { moreForRole, tabsForRole } from './routes';
@@ -17,7 +17,6 @@ import { moreForRole, tabsForRole } from './routes';
  */
 export function Shell() {
   const role = useSession((s) => s.role);
-  const devMode = useSession((s) => s.devMode);
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
 
@@ -40,7 +39,7 @@ export function Shell() {
             open={moreOpen}
             onClose={() => setMoreOpen(false)}
             groups={groups}
-            footer={devMode ? <RoleSwitcher onNavigate={() => setMoreOpen(false)} /> : null}
+            footer={<AccountFooter onNavigate={() => setMoreOpen(false)} />}
           />
         </>
       )}

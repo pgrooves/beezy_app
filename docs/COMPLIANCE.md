@@ -16,8 +16,8 @@ submission to both the App Store and Google Play.
 |---|---|---|---|
 | 4.2 | Minimum functionality | Boundary enforced in CI (0001) | Ship the four native anchors |
 | 3.1.5(a) | Physical goods & services | Square only, no IAP | Reviewer notes explaining the exemption |
-| 5.1.1(iv) | Login gating | Menu public; allowlist gates signup | **Remove the tester allowlist** |
-| 5.1.1(v) | Account deletion | Phase 2 | Plus a public web deletion URL for Play |
+| 5.1.1(iv) | Login gating | Menu, gallery, About, FAQ public; allowlist trigger gates signup | **Drop the allowlist trigger and table** |
+| 5.1.1(v) | Account deletion | Built (Phase 3) | Plus a public web deletion URL for Play |
 | 4.8 | Sign in with Apple | Provider slot reserved | Implement, equal prominence |
 | 5.1.1(i) | Purpose strings | Drafted below | Copy into Info.plist / manifests |
 | 2.1 | Reviewable build | — | Demo account with seeded data |
@@ -98,10 +98,17 @@ and permanently:
 Sign-in is required only at booking, garage, and payment — all of which are
 account-bound by nature.
 
-> **Pre-submission task.** The `tester_allowlist` table gates account creation
-> to invited beta emails. That is correct for a closed beta on a public URL
-> and **conflicts with 5.1.1(iv)**. It must be removed before submission.
-> Tracked in migration `0001`, table comment included.
+In the app, `SignedIn` in `src/app/App.tsx` guards garage, booking, plan,
+invoices, messages, referral, notifications and profile; everything else is
+open. The signed-out home is a front door to the gallery, About, service area
+and FAQ, not a sign-in wall.
+
+> **Pre-submission task.** The `tester_allowlist` table, enforced since
+> migration `0004` by the `enforce_tester_allowlist` trigger on
+> `auth.users`, gates account creation to invited beta emails. That is
+> correct for a closed beta on a public URL and **conflicts with
+> 5.1.1(iv)**. Drop the trigger, the function and the table before
+> submission (DECISIONS.md#0020).
 
 ---
 
@@ -110,14 +117,19 @@ account-bound by nature.
 Mandatory on both stores. Must be reachable **in the app** — an "email us to
 delete" link is a rejection — and must actually remove or anonymise the data.
 
-**Built in Phase 2**, not deferred:
+**Built in Phase 3** (the shell in Phase 2 only had the row). See
+DECISIONS.md#0022:
 
-- Reachable from More → Profile → Delete account, two taps from the tab bar.
-- Confirms destructively, then calls a Supabase edge function.
-- Deletes the `auth.users` row, which cascades to `profiles`, `vehicles`
-  and their photos.
-- Bookings and payments attached to completed work are **anonymised, not
-  deleted** — the customer link is severed and PII cleared, but the financial
+- Reachable from ••• → Profile & account → Delete account, two taps from the
+  tab bar.
+- Confirms inline, stating what goes and what is kept, then calls the
+  `delete-account` edge function, which can only delete its own caller.
+- Deletes the `auth.users` row, which cascades to `profiles` and `vehicles`
+  (asserted in `supabase/tests/rls.test.sql`), and photos once they exist.
+- The owner account is refused with a reason, so the business cannot be
+  locked out of its own portal from a phone.
+- *When those tables exist (not yet):* bookings and payments attached to
+  completed work are **anonymised, not deleted** — the customer link is severed and PII cleared, but the financial
   record survives, because Beezy has tax obligations on transactions that
   actually happened. `profiles.deleted_at` marks the tombstone.
 - This distinction is disclosed in the privacy policy and in the confirmation

@@ -203,7 +203,11 @@ const BUTTON_STYLES: Record<ButtonVariant, string> = {
   primary: 'bg-[var(--c-brand)] text-[var(--c-on-brand)]',
   secondary: 'border border-[var(--c-hairline)] bg-[var(--c-surface)] text-[var(--c-ink)]',
   ghost: 'text-[var(--c-ink-muted)]',
-  danger: 'bg-[var(--c-danger)] text-white',
+  // Outlined, not filled: white on the `danger` fill measures about 3:1, and
+  // `danger` is a fill-only token for the same reason `accent` is (#0018).
+  // `dangerText` on `surface` is asserted in contrast.test.ts in both themes.
+  danger:
+    'border border-[var(--c-danger)] bg-[var(--c-surface)] text-[var(--c-danger-text)]',
 };
 
 export function Button({
@@ -240,6 +244,47 @@ export function Button({
     <button type={type} onClick={onClick} disabled={disabled} className={classes}>
       {children}
     </button>
+  );
+}
+
+export const inputClass =
+  'w-full rounded-[var(--radius-md)] border border-[var(--c-hairline)] bg-[var(--c-surface)] px-[var(--space-lg)] py-[var(--space-md)] text-[15px] leading-[23px] text-[var(--c-ink)] outline-none focus:border-[var(--c-accent-text)]';
+
+/** A labelled form control. Pass an `<input className={inputClass}>` as the child. */
+export function Field({
+  label,
+  hint,
+  className,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className={cx('block', className)}>
+      <span className="eyebrow mb-[var(--space-sm)] flex items-baseline justify-between text-[var(--c-ink-subtle)]">
+        {label}
+        {hint && <span className="text-[9px]">{hint}</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+/** An error or confirmation line under a form. Announced to screen readers. */
+export function FormMessage({ children, tone = 'danger' }: { children: ReactNode; tone?: 'danger' | 'success' }) {
+  return (
+    <p
+      role={tone === 'danger' ? 'alert' : 'status'}
+      className={cx(
+        'mt-[var(--space-md)] text-[13px] leading-[19px]',
+        tone === 'danger' ? 'text-[var(--c-danger-text)]' : 'text-[var(--c-success-text)]',
+      )}
+    >
+      {children}
+    </p>
   );
 }
 

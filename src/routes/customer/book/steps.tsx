@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Chip, DemoNote } from '../../../components/ui';
+import { Card, Chip, DemoNote, Field, inputClass } from '../../../components/ui';
 import { cx } from '../../../components/ui/cx';
 import { assetUrl } from '../../../lib/assets';
 import { useBooking } from '../../../app/booking';
@@ -433,31 +433,6 @@ export function StepLocation() {
         third-party work saved for later.
       </DemoNote>
     </>
-  );
-}
-
-const inputClass =
-  'w-full rounded-[var(--radius-md)] border border-[var(--c-hairline)] bg-[var(--c-surface)] px-[var(--space-lg)] py-[var(--space-md)] text-[15px] leading-[23px] text-[var(--c-ink)] outline-none focus:border-[var(--c-accent-text)]';
-
-function Field({
-  label,
-  hint,
-  className,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className={cx('block', className)}>
-      <span className="eyebrow mb-[var(--space-sm)] flex items-baseline justify-between text-[var(--c-ink-subtle)]">
-        {label}
-        {hint && <span className="text-[9px]">{hint}</span>}
-      </span>
-      {children}
-    </label>
   );
 }
 

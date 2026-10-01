@@ -6,18 +6,30 @@
  * that renders blank because a fixture lookup missed.
  *
  * Usage:
- *   npm run build && npx serve site -l 4173   # site/<repo>/ mirrors Pages
+ *   VITE_SUPABASE_ANON_KEY=tour npm run build && npx serve site -l 4173   # site/<repo>/ mirrors Pages
  *   node scripts/tour.mjs http://localhost:4173/beezy_app/ ./shots
  */
 import { mkdirSync } from 'node:fs';
 import { launchChromium, assertGlassComposites } from './lib/browser.mjs';
+import { useFakeSupabase } from './lib/fake-supabase.mjs';
 
 const baseUrl = (process.argv[2] ?? 'http://localhost:4173/beezy_app/').replace(/\/$/, '');
 const outDir = process.argv[3] ?? 'shots';
 const only = process.env.ONLY;
 
-/** role is applied before load, so guarded routes resolve. */
+/**
+ * [name, path, role, expected landing path]. Role is signed in before load
+ * (scripts/lib/fake-supabase.mjs), so guarded routes resolve; null browses
+ * signed out. A fourth entry is where the app should send that visitor.
+ */
 const SCREENS = [
+  ['welcome', '/', null],
+  ['sign-in', '/sign-in', null],
+  ['gallery-signed-out', '/gallery', null],
+  ['about-signed-out', '/about', null],
+  ['garage-signed-out', '/garage', null, '/sign-in?next=%2Fgarage'],
+  ['admin-signed-out', '/admin/clients', null, '/sign-in?next=%2Fadmin%2Fclients'],
+  ['admin-as-customer', '/admin/clients', 'customer', '/'],
   ['home', '/', 'customer'],
   ['garage', '/garage', 'customer'],
   ['garage-vehicle', '/garage/veh-002', 'customer'],
@@ -62,7 +74,7 @@ for (const scheme of ['light', 'dark']) {
     baseURL: baseUrl,
   });
 
-  for (const [name, path, role] of SCREENS) {
+  for (const [name, path, role, landing = path] of SCREENS) {
     if (only && !name.includes(only)) continue;
     const page = await context.newPage();
     const problems = [];
@@ -83,14 +95,7 @@ for (const scheme of ['light', 'dark']) {
       problems.push(m.text());
     });
 
-    // Seed the role before the app boots, so a guarded route is not bounced.
-    await page.addInitScript((r) => {
-      try {
-        window.localStorage.setItem('beezy.devRole', r);
-      } catch {
-        /* ignore */
-      }
-    }, role);
+    const unexpected = await useFakeSupabase(page, role);
 
     await page.goto(`${baseUrl}${path}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(350);
@@ -107,7 +112,10 @@ for (const scheme of ['light', 'dark']) {
 
     if (!mounted) problems.push('app did not mount (#root empty or missing)');
     else if (text.length < 40) problems.push(`near-empty render (${text.length} chars)`);
-    if (!url.endsWith(path) && path !== '/') problems.push(`redirected to ${url}`);
+    if (!url.endsWith(landing) && !(landing === '/' && url === `${baseUrl}/`)) {
+      problems.push(`expected ${landing}, landed on ${url}`);
+    }
+    for (const request of unexpected) problems.push(`unstubbed Supabase request: ${request}`);
 
     if (scheme === 'light') {
       await page.screenshot({ path: `${outDir}/${name}.png`, fullPage: true });
@@ -142,6 +150,7 @@ const bookingContext = await browser.newContext({
 });
 const page = await bookingContext.newPage();
 const flowProblems = [];
+await useFakeSupabase(page, 'customer');
 page.on('pageerror', (e) => flowProblems.push(String(e)));
 
 const shot = (name) => page.screenshot({ path: `${outDir}/${name}.png`, fullPage: true });
