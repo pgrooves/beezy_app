@@ -10,7 +10,7 @@ moment it is discovered, and keep the "Next up" section true. Reasoning
 belongs in [DECISIONS.md](DECISIONS.md); this file links to it rather than
 repeating it.
 
-_Last updated: 2026-10-01 — Phase 3 deployed; anonymisation trigger live. Only the credentials handover remains._
+_Last updated: 2026-10-01 — Phase 3 deployed; anonymisation trigger live; Trey's account exists as owner. Only the credentials handover remains._
 
 ---
 
@@ -44,11 +44,13 @@ app** — the code, database and deploy are ready and waiting.
       Resend (needs DNS access — see *Open — Outbound email sending domain*
       in DECISIONS.md). Set in Supabase → Authentication → Emails → SMTP
       Settings. [DECISIONS.md#0021](DECISIONS.md)
-- [ ] **2. Add the code to the sign-in emails.** Only editable once SMTP is
-      on. In Authentication → Emails, edit **Magic link or OTP** and
-      **Confirm signup**: under "Follow the link below to sign in", add
-      `<p>Your code is <strong>{{ .Token }}</strong></p>`; subject
-      "Your Beezy sign-in code". The app signs in by code, never by link.
+- [ ] **2. Paste in the branded sign-in emails.** Ready in
+      `supabase/templates/` (see its README): Beezy logo, the code in large
+      type, no link, no mention of Supabase. Only editable once SMTP is on.
+      Set the SMTP sender name to `Beezy`. Until then Supabase sends its own
+      unbranded email with a link instead of a code, which the app cannot
+      use — seen 2026-10-01 when Trey first tried to sign in.
+- [x] _Trey's account created as owner on first sign-in attempt, 2026-10-01 (confirmed in `profiles`)._
 - [ ] **3. Transfer ownership to Brandon** when ready. Trey's invite is
       `owner` today (`tester_allowlist`). Add Brandon's email to the
       allowlist with role `owner`; once Brandon has signed in, set Trey's
