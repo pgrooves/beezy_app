@@ -19,15 +19,15 @@ Migrations live in `supabase/migrations/`, numbered, never edited once applied.
 | `profiles` | One row per auth user. Role drives the shell and every policy. | 0001 |
 | `services` | The service menu. Seeded from beezynola.com. | 0001 |
 | `vehicles` | The car, not just the customer. | 0001 |
-| `tester_allowlist` | Beta signup gate, enforced by a trigger on `auth.users` since 0004. **Remove before submission.** | 0001, 0004 |
+| `tester_allowlist` | Beta signup gate, enforced by a trigger on `auth.users` since 0004; carries the invited role since 0005. **Remove before submission.** | 0001, 0004, 0005 |
+| `bookings` | A requested or completed job. Customer may create (as `requested`) and cancel only; shape enforced by `private.guard_booking_write()`. Survives account deletion anonymised. | 0005 |
+| `photos` | Condition photos now; before/after and damage in Phase 5. Files in the private `photos` bucket at `<owner>/<booking>/<file>`. | 0005 |
 
 ### Planned
 
 | Table | Purpose | Phase |
 |---|---|---|
-| `bookings` | client, vehicle, services[], address, scheduled_at, status, deposit, totals, `square_booking_id` | 3 |
 | `jobs` | booking ref, assigned_tech, actual start/end, checklist state | 5 |
-| `photos` | job, type (before/after/damage), url, exif | 3 |
 | `payments` | `square_payment_id`, amount, type, status | 4 |
 | `subscriptions` | client, plan, `square_subscription_id`, credits_remaining | 6 |
 | `expenses`, `mileage_trips` | Tax-time reporting | 7 |
@@ -102,25 +102,25 @@ disclosure and belongs in this table first.
 VIN is optional and never required to book. It decodes against NHTSA's public
 vPIC service, which needs no key and no account.
 
-### Location — `bookings` (Phase 3)
+### Location — `bookings`
 
 | Field | Purpose | Precision | On account deletion |
 |---|---|---|---|
 | Service address | Where the van goes | Street address | **Anonymised, not deleted**, on completed jobs |
-| Map pin / coordinates | Routing, travel-time scheduling | Precise | Anonymised |
+| Map pin / coordinates | Routing. **Optional** — only if the customer taps *Pin my exact spot* | Precise | Cleared |
 | Gate code, parking notes | Access | — | Deleted |
 
 Declared as **precise location** on both stores. Collected only at booking,
 never in the background — the PWA cannot do background location, and the
 native build will not ask for `Always`.
 
-### Photography — `photos` (Phase 3)
+### Photography — `photos`
 
 | Field | Purpose | Notes |
 |---|---|---|
-| Condition photos | Quote accuracy | Uploaded by the customer at booking |
+| Condition photos | Quote accuracy | Uploaded by the customer at booking. Resized and re-encoded on the device, which strips EXIF — no location leaves the phone |
 | Before/after | Documentation; dispute protection on pre-existing damage | Captured by the tech |
-| EXIF timestamp + coordinates | Proves when and where the work happened | Retained deliberately |
+| EXIF timestamp + coordinates | Proves when and where the work happened | Retained deliberately on Beezy's before/after (Phase 5), never taken from a customer's photo |
 
 Resized and compressed **on device before upload** — free-tier storage is 1 GB
 and photography exhausts it first. Thumbnails stored separately.
@@ -147,7 +147,7 @@ Disclosed in the privacy policy and in the deletion confirmation copy.
 | Square | Name, email, phone, amounts, tokens | Payments — system of record for money | 4 |
 | Google Calendar | Job title, time, address, client name, phone | Beezy's day-to-day calendar | 4 |
 | Resend | Email, name, booking details | Transactional email | 4 |
-| NHTSA vPIC | VIN only | Decode to year/make/model | 3 |
+| NHTSA vPIC | VIN only, and only when the customer taps *Look up* | Decode to year/make/model | 3 (live) |
 | Twilio | Phone, message body | SMS reminders and two-way | 8 |
 
 No analytics or advertising SDK is present. Adding one requires a label update
@@ -163,4 +163,5 @@ and an entry here in the same commit.
 | Condition photos | 24 months, then purged |
 | Before/after on completed jobs | 24 months (dispute window), then purged unless consented to the gallery |
 | Financial records | 7 years, anonymised after account deletion |
-| Deleted account tombstone (`deleted_at`) | Indefinite — an id and a timestamp, no PII. Only once bookings exist to anchor it; today deletion removes the profile row outright |
+| Anonymised bookings (`anonymised_at`) | Kept with the financial record: no customer link, no street, coordinates, gate code, notes or vehicle. Deletion removes the profile row outright, so there is no separate tombstone |
+| Photo files | Deleted from storage with the account, by the `delete-account` function |

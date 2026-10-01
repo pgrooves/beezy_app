@@ -9,13 +9,13 @@ import { BOOKING_STEPS } from './booking';
 import SignIn from '../routes/auth/SignIn';
 import ProfileScreen from '../routes/account/Profile';
 import Home from '../routes/customer/Home';
-import Garage, { VehicleDetail } from '../routes/customer/Garage';
+import Garage, { VehicleDetail, VehicleForm } from '../routes/customer/Garage';
 import Gallery from '../routes/customer/Gallery';
 import { BookLayout } from '../routes/customer/book/BookLayout';
 import {
   StepCondition,
   StepConfirm,
-  StepDeposit,
+  StepReview,
   StepLocation,
   StepService,
   StepTime,
@@ -35,6 +35,7 @@ import {
 } from '../routes/customer/more';
 
 import Today from '../routes/admin/Today';
+import { RequestDetail } from '../routes/admin/Requests';
 import Jobs, { JobDetail } from '../routes/admin/Jobs';
 import Clients, { ClientDetail } from '../routes/admin/Clients';
 import {
@@ -78,7 +79,9 @@ export default function App() {
 
           {/* Account-bound: garage, bookings, money, and the account itself. */}
           <Route path="/garage" element={<SignedIn><Garage /></SignedIn>} />
+          <Route path="/garage/new" element={<SignedIn><VehicleForm /></SignedIn>} />
           <Route path="/garage/:vehicleId" element={<SignedIn><VehicleDetail /></SignedIn>} />
+          <Route path="/garage/:vehicleId/edit" element={<SignedIn><VehicleForm /></SignedIn>} />
           <Route path="/booking/:bookingId" element={<SignedIn><BookingDetail /></SignedIn>} />
           <Route path="/plan" element={<SignedIn><PlanScreen /></SignedIn>} />
           <Route path="/invoices" element={<SignedIn><InvoicesScreen /></SignedIn>} />
@@ -97,7 +100,7 @@ export default function App() {
             <Route path="condition" element={<StepCondition />} />
             <Route path="location" element={<StepLocation />} />
             <Route path="time" element={<StepTime />} />
-            <Route path="deposit" element={<StepDeposit />} />
+            <Route path="review" element={<StepReview />} />
             <Route path="confirm" element={<StepConfirm />} />
           </Route>
 
@@ -110,6 +113,7 @@ export default function App() {
               </StaffOnly>
             }
           />
+          <Route path="/admin/requests/:bookingId" element={<StaffOnly staffOnly><RequestDetail /></StaffOnly>} />
           <Route path="/admin/schedule" element={<StaffOnly staffOnly><Schedule /></StaffOnly>} />
           <Route path="/admin/jobs" element={<StaffOnly><Jobs /></StaffOnly>} />
           <Route path="/admin/jobs/:bookingId" element={<StaffOnly><JobDetail /></StaffOnly>} />

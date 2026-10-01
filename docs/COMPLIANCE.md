@@ -124,12 +124,13 @@ DECISIONS.md#0022:
   tab bar.
 - Confirms inline, stating what goes and what is kept, then calls the
   `delete-account` edge function, which can only delete its own caller.
-- Deletes the `auth.users` row, which cascades to `profiles` and `vehicles`
-  (asserted in `supabase/tests/rls.test.sql`), and photos once they exist.
+- Deletes the `auth.users` row, which cascades to `profiles`, `vehicles` and
+  `photos`, and removes the photo files from storage (asserted in
+  `supabase/tests/rls.test.sql`).
 - The owner account is refused with a reason, so the business cannot be
   locked out of its own portal from a phone.
-- *When those tables exist (not yet):* bookings and payments attached to
-  completed work are **anonymised, not deleted** — the customer link is severed and PII cleared, but the financial
+- Bookings attached to completed work are **anonymised, not deleted**
+  (payments join them in Phase 4) — the customer link is severed and PII cleared, but the financial
   record survives, because Beezy has tax obligations on transactions that
   actually happened. `profiles.deleted_at` marks the tombstone.
 - This distinction is disclosed in the privacy policy and in the confirmation

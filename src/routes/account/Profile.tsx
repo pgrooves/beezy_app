@@ -46,16 +46,20 @@ function DetailsForm({ profile }: { profile: Profile }) {
   const updateProfile = useSession((s) => s.updateProfile);
   const [fullName, setFullName] = useState(profile.fullName);
   const [phone, setPhone] = useState(profile.phone);
+  const [galleryConsent, setGalleryConsent] = useState(profile.galleryConsent);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
 
-  const dirty = fullName.trim() !== profile.fullName || phone.trim() !== profile.phone;
+  const dirty =
+    fullName.trim() !== profile.fullName ||
+    phone.trim() !== profile.phone ||
+    galleryConsent !== profile.galleryConsent;
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setMessage(null);
-    const { error } = await updateProfile({ fullName, phone });
+    const { error } = await updateProfile({ fullName, phone, galleryConsent });
     setBusy(false);
     if (error) {
       setMessage({ tone: 'danger', text: error });
@@ -90,6 +94,21 @@ function DetailsForm({ profile }: { profile: Profile }) {
       <Field label="Email" hint="Used to sign in">
         <p className={cx(inputClass, 'text-[var(--c-ink-muted)]')}>{profile.email}</p>
       </Field>
+      <label className="flex items-center justify-between gap-[var(--space-lg)] rounded-[var(--radius-card)] border border-[var(--c-hairline)] bg-[var(--c-surface)] p-[var(--space-lg)]">
+        <span className="min-w-0">
+          <span className="block text-[15px] leading-[23px]">Feature my car in the gallery</span>
+          <span className="block text-[13px] leading-[19px] text-[var(--c-ink-muted)]">
+            Before-and-after photos of your car, never your name or address. Off unless you
+            turn it on.
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          checked={galleryConsent}
+          onChange={(e) => setGalleryConsent(e.target.checked)}
+          className="h-6 w-6 shrink-0 accent-[var(--c-accent-text)]"
+        />
+      </label>
       {message && <FormMessage tone={message.tone}>{message.text}</FormMessage>}
       <Button type="submit" full disabled={!dirty || busy}>
         {busy ? 'Saving…' : 'Save changes'}

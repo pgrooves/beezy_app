@@ -51,7 +51,10 @@ export interface AppearanceAdapter {
 export type PhotoPurpose = 'vehicle-condition' | 'job-before' | 'job-after' | 'damage';
 
 export interface CapturedPhoto {
+  /** Already resized and re-encoded for upload (JPEG, long edge ≤ 1600px). */
   blob: Blob;
+  /** Displayable locally before upload. Release with `camera.release()`. */
+  previewUrl: string;
   width: number;
   height: number;
   capturedAt: string;
@@ -66,6 +69,8 @@ export interface CameraAdapter {
    */
   capture(purpose: PhotoPurpose): Promise<CapturedPhoto | null>;
   pickFromLibrary(purpose: PhotoPurpose): Promise<CapturedPhoto[]>;
+  /** Frees a photo's preview once nothing displays it. */
+  release(photo: CapturedPhoto): void;
   permission(): Promise<PermissionState>;
 }
 

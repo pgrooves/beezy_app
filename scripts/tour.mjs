@@ -11,7 +11,11 @@
  */
 import { mkdirSync } from 'node:fs';
 import { launchChromium, assertGlassComposites } from './lib/browser.mjs';
-import { useFakeSupabase } from './lib/fake-supabase.mjs';
+import { useFakeSupabase, TOUR_IDS } from './lib/fake-supabase.mjs';
+import { fileURLToPath } from 'node:url';
+
+/** A real photo for the condition step's file picker. */
+const SAMPLE_PHOTO = fileURLToPath(new URL('../public/brand/photos/wheel-detail.webp', import.meta.url));
 
 const baseUrl = (process.argv[2] ?? 'http://localhost:4173/beezy_app/').replace(/\/$/, '');
 const outDir = process.argv[3] ?? 'shots';
@@ -32,7 +36,10 @@ const SCREENS = [
   ['admin-as-customer', '/admin/clients', 'customer', '/'],
   ['home', '/', 'customer'],
   ['garage', '/garage', 'customer'],
-  ['garage-vehicle', '/garage/veh-002', 'customer'],
+  ['garage-vehicle', `/garage/${TOUR_IDS.macan}`, 'customer'],
+  ['garage-new', '/garage/new', 'customer'],
+  ['garage-edit', `/garage/${TOUR_IDS.tahoe}/edit`, 'customer'],
+  ['booking-detail', `/booking/${TOUR_IDS.upcoming}`, 'customer'],
   ['gallery', '/gallery', 'customer'],
   ['plan', '/plan', 'customer'],
   ['invoices', '/invoices', 'customer'],
@@ -42,6 +49,7 @@ const SCREENS = [
   ['referral', '/referral', 'customer'],
   ['profile', '/settings/profile', 'customer'],
   ['admin-today', '/admin', 'owner'],
+  ['admin-request', `/admin/requests/${TOUR_IDS.request}`, 'owner'],
   ['admin-schedule', '/admin/schedule', 'owner'],
   ['admin-jobs', '/admin/jobs', 'owner'],
   ['admin-job', '/admin/jobs/bk-202', 'owner'],
@@ -172,9 +180,18 @@ try {
   await advance();
 
   await shot('book-3-condition-empty');
-  // Two photos is the floor the step enforces.
-  await page.getByRole('button', { name: /exterior/i }).click();
-  await page.getByRole('button', { name: /front seats/i }).click();
+  // Two photos is the floor the step enforces. The tiles open the system
+  // picker, so answer it with a real image, which the camera adapter then
+  // resizes and re-encodes exactly as it would on a phone.
+  for (const slot of [/exterior/i, /front seats/i]) {
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: slot }).first().click();
+    await (await chooser).setFiles(SAMPLE_PHOTO);
+    await page.waitForTimeout(400);
+  }
+  if ((await page.locator('img[alt="Exterior"]').count()) !== 1) {
+    throw new Error('captured photo did not appear on its tile');
+  }
   await page.getByText('Heavy', { exact: false }).first().click();
   await shot('book-3-condition');
   await advance();
@@ -188,17 +205,25 @@ try {
   await shot('book-5-time');
   await advance();
 
-  await shot('book-6-deposit');
-  await page.getByText('Add a card').click();
-  await page.waitForTimeout(200);
-  await shot('book-6-deposit-card');
-  await advance();
+  await shot('book-6-review');
+  // Sending the request is the step that writes: booking row, two uploads,
+  // two photo rows — all answered by the stub.
+  const sent = page.waitForRequest((r) => r.url().includes('/rest/v1/bookings') && r.method() === 'POST');
+  const uploads = [];
+  page.on('request', (r) => r.url().includes('/storage/v1/object/photos/') && uploads.push(r));
+  await page.getByRole('button', { name: 'Send request' }).click();
+  const booked = (await sent).postDataJSON();
+  await page.waitForURL(/\/book\/confirm$/);
+  await page.waitForTimeout(300);
+  if (booked.status !== undefined) flowProblems.push('client sent a booking status');
+  if (!booked.subtotal_cents || !booked.duration_minutes) flowProblems.push('booking sent without a price');
+  if (uploads.length !== 2) flowProblems.push(`expected 2 photo uploads, saw ${uploads.length}`);
 
   await shot('book-7-confirm');
 
   const confirmText = await page.evaluate(() => document.body.innerText);
-  if (!/You.{0,3}re booked/i.test(confirmText)) {
-    flowProblems.push('confirm screen did not render the booked state');
+  if (!/Request sent/i.test(confirmText)) {
+    flowProblems.push('confirm screen did not render the requested state');
   }
   // The estimate must have survived every step, not reset along the way.
   if (!/\$\d/.test(confirmText)) flowProblems.push('confirm screen shows no price');

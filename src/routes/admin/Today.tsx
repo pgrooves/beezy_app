@@ -1,6 +1,7 @@
 import { Card, Chip, DemoNote, Screen, ScreenHeader, SectionHeader, Stat } from '../../components/ui';
 import { cx } from '../../components/ui/cx';
-import { useSession } from '../../app/session';
+import { useSession, isStaff } from '../../app/session';
+import { RequestsSection } from './Requests';
 import { formatDuration, formatMoney } from '../../core/pricing';
 import { TODAY_BOOKINGS, clientById, jobForBooking, serviceById } from '../../core/fixtures';
 import type { Booking, BookingStatus } from '../../core/types';
@@ -55,6 +56,17 @@ export default function Today() {
         }).format(new Date())}
         title="Today"
       />
+
+      {isStaff(role) && (
+        <>
+          <RequestsSection />
+          <DemoNote>
+            Everything below is an example day. The route, takings and jobs go live with the
+            schedule in Phase 5; the bookings above are real.
+          </DemoNote>
+          <div className="h-[var(--space-xl)]" />
+        </>
+      )}
 
       {showMoney && (
         <Card>

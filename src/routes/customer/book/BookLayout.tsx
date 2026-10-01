@@ -1,5 +1,7 @@
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { BOOKING_STEPS, useBooking, type StepPath } from '../../../app/booking';
+import { useServices, useVehicles } from '../../../app/data';
 import { formatMoney } from '../../../core/pricing';
 import { cx } from '../../../components/ui/cx';
 import { platform } from '../../../lib/platform';
@@ -20,6 +22,11 @@ export function BookLayout() {
   // re-render and the running total and Continue button would sit frozen
   // while the customer filled the flow in.
   const booking = useBooking();
+  // The quote reads the live menu and garage, so re-render when they arrive.
+  const { state: servicesState } = useServices();
+  const { state: vehiclesState } = useVehicles();
+  const [params] = useSearchParams();
+  const [error, setError] = useState<string | null>(null);
   const quote = booking.quote();
   const canAdvance = booking.canAdvance;
 
@@ -28,6 +35,30 @@ export function BookLayout() {
   const step = BOOKING_STEPS[index];
   const isLast = index === BOOKING_STEPS.length - 1;
   const ready = step ? canAdvance(step.path) : false;
+
+  // "Book this car" from the garage, or a car just added mid-flow, arrives
+  // preselected.
+  const preselect = params.get('vehicle');
+  useEffect(() => {
+    if (preselect) useBooking.getState().setVehicle(preselect);
+  }, [preselect]);
+
+  // Coming back into the flow after a request was sent starts a new booking,
+  // rather than reopening the sent one for a second submit. Keyed on the
+  // first step, because every way back in (Book tab, Book again) lands there;
+  // keying on "not the confirm screen" fired the instant the request saved,
+  // while the review screen was still up, and wiped the confirmation.
+  const submitted = !!booking.submitted;
+  useEffect(() => {
+    if (submitted && current === 'service') useBooking.getState().reset();
+  }, [submitted, current]);
+
+  useEffect(() => setError(null), [current]);
+
+  // Wait for the menu and garage before judging which steps are finished;
+  // judging early would bounce a reload to step one for no reason.
+  if (servicesState !== 'ready' && servicesState !== 'error') return null;
+  if (vehiclesState === 'idle' || vehiclesState === 'loading') return null;
 
   // Deep-linking or reloading into a later step would show a screen with
   // nothing behind it — an empty total on Deposit, a summary with no service
@@ -38,16 +69,41 @@ export function BookLayout() {
   }
 
   const goBack = () => {
-    if (index <= 0) navigate('/');
+    if (index <= 0 || isLast) navigate('/');
     else navigate(`/book/${BOOKING_STEPS[index - 1]!.path}`);
   };
 
-  const goNext = () => {
-    if (!ready) return;
+  const goNext = async () => {
+    if (!ready || booking.submitting) return;
+    if (current === 'review') {
+      setError(null);
+      const message = await booking.submit();
+      if (message) {
+        setError(message);
+        platform.haptics.error();
+        return;
+      }
+      platform.haptics.success();
+      navigate('/book/confirm', { replace: true });
+      return;
+    }
     platform.haptics.selection();
-    if (isLast) navigate('/');
-    else navigate(`/book/${BOOKING_STEPS[index + 1]!.path}`);
+    if (isLast) {
+      const id = booking.submitted?.bookingId;
+      booking.reset();
+      navigate(id ? `/booking/${id}` : '/', { replace: true });
+    } else {
+      navigate(`/book/${BOOKING_STEPS[index + 1]!.path}`);
+    }
   };
+
+  const nextLabel = isLast
+    ? 'Done'
+    : current === 'review'
+      ? booking.submitting
+        ? 'Sending…'
+        : 'Send request'
+      : 'Continue';
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -121,18 +177,23 @@ export function BookLayout() {
             </div>
             <button
               type="button"
-              onClick={goNext}
-              disabled={!ready}
+              onClick={() => void goNext()}
+              disabled={!ready || booking.submitting}
               className={cx(
                 'eyebrow rounded-[var(--radius-full)] px-[var(--space-2xl)] py-[var(--space-lg)] transition-[opacity,transform]',
-                ready
+                ready && !booking.submitting
                   ? 'bg-[var(--c-brand)] text-[var(--c-on-brand)] active:scale-[0.98]'
                   : 'pointer-events-none bg-[var(--c-brand)] text-[var(--c-on-brand)] opacity-30',
               )}
             >
-              {isLast ? 'Done' : 'Continue'}
+              {nextLabel}
             </button>
           </div>
+          {error && (
+            <p role="alert" className="mt-[var(--space-md)] text-[13px] leading-[19px] text-[var(--c-danger-text)]">
+              {error}
+            </p>
+          )}
           {quote?.needsReview && (
             <p className="mt-[var(--space-md)] text-[12px] leading-[17px] text-[var(--c-ink-subtle)]">
               Beezy confirms the final price from your photos before he starts. You approve it in

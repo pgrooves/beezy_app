@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useBookings, useData, useServices } from '../../app/data';
+import { STATUS_LABEL, canCancel } from '../../core/rows';
 import {
   Button,
   Card,
@@ -6,6 +9,7 @@ import {
   DemoNote,
   DetailHeader,
   EmptyState,
+  FormMessage,
   ListRow,
   Screen,
   ScreenHeader,
@@ -22,7 +26,6 @@ import {
   PAYMENTS,
   PLANS,
   serviceById,
-  vehicleById,
 } from '../../core/fixtures';
 
 const dateFormat = new Intl.DateTimeFormat('en-US', {
@@ -44,84 +47,131 @@ const longDate = new Intl.DateTimeFormat('en-US', {
 
 export function BookingDetail() {
   const { bookingId } = useParams();
-  const booking = BOOKINGS.find((b) => b.id === bookingId);
+  const { bookings, state } = useBookings();
+  const { services } = useServices();
+  const cancelBooking = useData((s) => s.cancelBooking);
+  const photoUrls = useData((s) => s.photoUrls);
+  const [photos, setPhotos] = useState<{ slot: string | null; url: string }[]>([]);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const booking = bookings.find((b) => b.id === bookingId);
+
+  useEffect(() => {
+    if (!bookingId) return;
+    let live = true;
+    void photoUrls(bookingId).then((urls) => live && setPhotos(urls));
+    return () => {
+      live = false;
+    };
+  }, [bookingId, photoUrls]);
+
+  if (state !== 'ready') {
+    return (
+      <Screen>
+        <DetailHeader to="/" label="Home" />
+      </Screen>
+    );
+  }
 
   if (!booking) {
     return (
       <Screen>
         <ScreenHeader title="Not found" />
-        <EmptyState title="No such booking" body="It may have been cancelled." action={<Button to="/">Home</Button>} />
+        <EmptyState title="No such booking" body="It may have been removed." action={<Button to="/">Home</Button>} />
       </Screen>
     );
   }
 
-  const vehicle = vehicleById(booking.vehicleId);
-  const services = booking.serviceIds.map(serviceById).filter(Boolean);
-  const upcoming = booking.status === 'confirmed';
+  const names = booking.serviceIds.map((id) => services.find((s) => s.id === id)?.name ?? 'Service');
+  const tone = booking.status === 'requested' ? 'warning' : booking.status === 'cancelled' ? 'neutral' : 'success';
 
   return (
     <Screen>
       <DetailHeader to="/" label="Home" />
-      <h1 className="font-display mt-[var(--space-lg)] text-[28px] leading-[34px]">
-        {services.map((s) => s?.name).join(' + ')}
-      </h1>
+      <h1 className="font-display mt-[var(--space-lg)] text-[28px] leading-[34px]">{names.join(' + ')}</h1>
       <p className="tabular mt-[var(--space-sm)] text-[15px] leading-[23px] text-[var(--c-ink-muted)]">
         {longDate.format(new Date(booking.scheduledAt))}
       </p>
       <div className="mt-[var(--space-lg)]">
-        <Chip tone={upcoming ? 'success' : 'neutral'}>
-          {upcoming ? 'Confirmed' : booking.status === 'paid' ? 'Complete' : booking.status}
-        </Chip>
+        <Chip tone={tone}>{STATUS_LABEL[booking.status]}</Chip>
       </div>
+      {booking.status === 'requested' && (
+        <p className="mt-[var(--space-md)] text-[13px] leading-[19px] text-[var(--c-ink-subtle)]">
+          Beezy confirms the time by text. It changes to Confirmed here when that happens.
+        </p>
+      )}
 
       <SectionHeader title="Details" />
       <Card padded={false}>
         <div className="px-[var(--space-xl)]">
-          <ListRow
-            label="Vehicle"
-            trailing={
-              <span className="text-[14px] text-[var(--c-ink-muted)]">
-                {vehicle ? `${vehicle.make} ${vehicle.model}` : '—'}
-              </span>
-            }
-          />
+          <ListRow label="Vehicle" trailing={<span className="text-[14px] text-[var(--c-ink-muted)]">{booking.vehicleLabel}</span>} />
           <ListRow
             label="Where"
-            trailing={
-              <span className="text-right text-[14px] text-[var(--c-ink-muted)]">
-                {booking.address.line1}
-              </span>
-            }
+            trailing={<span className="text-right text-[14px] text-[var(--c-ink-muted)]">{booking.address.line1}</span>}
           />
           {booking.address.gateCode && (
             <ListRow
               label="Gate code"
-              trailing={
-                <span className="tabular text-[14px] text-[var(--c-ink-muted)]">
-                  {booking.address.gateCode}
-                </span>
-              }
+              trailing={<span className="tabular text-[14px] text-[var(--c-ink-muted)]">{booking.address.gateCode}</span>}
             />
           )}
           <ListRow
-            label={booking.finalCents ? 'Paid' : 'Estimate'}
-            trailing={
-              <span className="tabular text-[14px]">
-                {formatMoney(booking.finalCents ?? booking.totalCents)}
-              </span>
-            }
+            label={booking.finalCents ? 'Final price' : 'Estimate'}
+            trailing={<span className="tabular text-[14px]">{formatMoney(booking.finalCents ?? booking.totalCents)}</span>}
           />
         </div>
       </Card>
 
-      {upcoming && (
-        <div className="mt-[var(--space-2xl)] space-y-[var(--space-md)]">
-          <Button variant="secondary" full>
-            Reschedule
-          </Button>
-          <Button variant="ghost" full>
-            Cancel booking
-          </Button>
+      {photos.length > 0 && (
+        <>
+          <SectionHeader title="Your photos" />
+          <div className="grid grid-cols-2 gap-[var(--space-md)]">
+            {photos.map((photo) => (
+              <img
+                key={photo.url}
+                src={photo.url}
+                alt={photo.slot ? `Condition photo: ${photo.slot.replace('_', ' ')}` : 'Condition photo'}
+                className="aspect-[4/3] w-full rounded-[var(--radius-card)] object-cover"
+                loading="lazy"
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {canCancel(booking) && (
+        <div className="mt-[var(--space-2xl)]">
+          {!confirmCancel ? (
+            <Button variant="ghost" full onClick={() => setConfirmCancel(true)}>
+              Cancel booking
+            </Button>
+          ) : (
+            <div className="rounded-[var(--radius-card)] border border-[var(--c-danger)] p-[var(--space-lg)]">
+              <p className="text-[14px] leading-[21px] text-[var(--c-ink-muted)]">
+                Cancel this booking? To move it instead, cancel and book the new time.
+              </p>
+              {error && <FormMessage>{error}</FormMessage>}
+              <div className="mt-[var(--space-lg)] flex gap-[var(--space-md)]">
+                <Button
+                  variant="danger"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    const result = await cancelBooking(booking.id);
+                    setBusy(false);
+                    if (result.error) setError(result.error);
+                    else setConfirmCancel(false);
+                  }}
+                >
+                  {busy ? 'Cancelling…' : 'Cancel it'}
+                </Button>
+                <Button variant="secondary" disabled={busy} onClick={() => setConfirmCancel(false)}>
+                  Keep it
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Screen>

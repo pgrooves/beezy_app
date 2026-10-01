@@ -2,13 +2,17 @@
 // account-deletion policy). See docs/DECISIONS.md#0022.
 //
 // The caller can only ever delete themselves: the user id comes from their
-// own verified access token, never from the request body. The service role
-// then deletes the auth user, and the database does the rest —
-// profiles cascade from auth.users, vehicles from profiles.
+// own verified access token, never from the request body. In order:
 //
-// When bookings and payments arrive they must be anonymised, not deleted
-// (Beezy has tax obligations on work that happened). That step belongs here,
-// before the delete, in the same migration that adds those tables.
+//   1. Bookings: work that happened (complete, paid) is kept for the tax
+//      record with the person removed; everything else is deleted. The
+//      database trigger from 0005 does the same on any profile delete; doing
+//      it here too means in-app deletion is correct whether or not that
+//      trigger is installed, and the two are idempotent together.
+//   2. Photo files under <user id>/ in the `photos` bucket. Storage objects
+//      do not cascade from rows, so they are removed explicitly.
+//   3. The auth user. Profiles cascade from it; vehicles and photo rows
+//      cascade from the profile.
 //
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are injected
 // by the platform. The service role key never leaves this function.
@@ -67,6 +71,55 @@ Deno.serve(async (req) => {
     });
   }
 
+  // 1. Bookings.
+  const anonymised = await admin
+    .from('bookings')
+    .update({
+      client_id: null,
+      vehicle_id: null,
+      vehicle_label: 'Vehicle',
+      address_line1: null,
+      address_line2: null,
+      gate_code: null,
+      parking_notes: null,
+      latitude: null,
+      longitude: null,
+      notes: null,
+      anonymised_at: new Date().toISOString(),
+    })
+    .eq('client_id', userId)
+    .in('status', ['complete', 'paid']);
+  const removedBookings = anonymised.error
+    ? anonymised
+    : await admin
+        .from('bookings')
+        .delete()
+        .eq('client_id', userId)
+        .not('status', 'in', '(complete,paid)');
+  if (anonymised.error || removedBookings.error) {
+    console.error('delete-account: bookings step failed', userId);
+    return json(500, { error: 'Your account wasn’t deleted. Try again in a moment.' });
+  }
+
+  // 2. Photo files. Layout is <user>/<booking>/<file>; two levels to walk.
+  const bucket = admin.storage.from('photos');
+  const { data: folders } = await bucket.list(userId, { limit: 1000 });
+  const paths: string[] = [];
+  for (const folder of folders ?? []) {
+    const { data: files } = await bucket.list(`${userId}/${folder.name}`, { limit: 1000 });
+    for (const file of files ?? []) paths.push(`${userId}/${folder.name}/${file.name}`);
+    // A file directly under the user folder has an id; a folder does not.
+    if (folder.id) paths.push(`${userId}/${folder.name}`);
+  }
+  if (paths.length) {
+    const { error: storageError } = await bucket.remove(paths);
+    if (storageError) {
+      console.error('delete-account: storage cleanup failed', userId);
+      return json(500, { error: 'Your account wasn’t deleted. Try again in a moment.' });
+    }
+  }
+
+  // 3. The account itself.
   const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
   if (deleteError) {
     console.error('delete-account: deleteUser failed', userId, deleteError.message);

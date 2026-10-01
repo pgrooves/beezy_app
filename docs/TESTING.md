@@ -58,18 +58,33 @@ email first, then you sign in with a code.
       Only try this on an account you're happy to lose — Beezy will need to
       invite you again
 
-Beezy's own accounts open straight into Today, Schedule, Jobs and Clients;
-a tech account sees fewer tabs and no money anywhere.
+**Your garage and bookings are real now.**
 
-Everything past your profile is still demo data. Nothing you book saves, and
-nothing is charged — anything not wired up says so on the screen.
+- [ ] Garage → **Add a vehicle**. If you have the VIN, **Look up** fills it in
+- [ ] Edit the car, then remove it — past bookings still show it by name
+- [ ] Book a detail: pick a service, your car, then **take two real photos**
+      (the tiles open your camera; *Choose from photos* uses your library)
+- [ ] **Pin my exact spot** asks for your location only when you tap it, and
+      booking works fine if you say no
+- [ ] **Send request** → *Request sent*. Home shows it as *Requested*
+- [ ] Open it from Home: your photos are there, and **Cancel booking** works
+- [ ] Nothing is charged — the deposit arrives with card payments next phase
+
+**Beezy's side:** Today shows a **Requests** list at the top. Open one: the
+customer's details, address, photos, and **Confirm this time** / **Decline**.
+Confirming doesn't text the customer yet, so text them as well. Everything
+below the requests on Today, and the other admin tabs, is still an example.
+A tech account sees fewer tabs and no money anywhere.
+
+Plan, invoices, messages and referrals are still demo screens — anything not
+wired up says so.
 
 **The booking flow** is the screen that matters most:
 
 - [ ] Home → **Book a detail**, then all seven steps
 - [ ] The running total at the bottom updates as you pick things
 - [ ] Picking a bigger vehicle raises it; so does a worse condition
-- [ ] The Deposit step breaks the price down — base, vehicle, condition
+- [ ] The Review step breaks the price down — base, vehicle, condition
 - [ ] Choosing **Extreme** condition drops the deposit and says Beezy will
       confirm on site
 - [ ] Continue stays greyed out until the step has what it needs
@@ -82,8 +97,8 @@ nothing is charged — anything not wired up says so on the screen.
 
 **Worth a look:** Gallery (drag the before/after slider), Garage, About.
 
-**Not built yet, on purpose:** saving vehicles or bookings, real photos,
-payments, calendar, booking emails or texts.
+**Not built yet, on purpose:** payments, Beezy's calendar, booking emails or
+texts, the schedule and jobs pipeline.
 
 ---
 

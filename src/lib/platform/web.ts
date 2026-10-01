@@ -9,6 +9,7 @@ import type {
   AppShellAdapter,
   AppearanceAdapter,
   CameraAdapter,
+  CapturedPhoto,
   ColourScheme,
   DisplayMode,
   GeolocationAdapter,
@@ -134,12 +135,83 @@ const appearance: AppearanceAdapter = {
   },
 };
 
+/**
+ * Photos are resized and re-encoded on the device before they go anywhere:
+ * free-tier storage is 1 GB and an iPhone original is 3–6 MB. 1600px on the
+ * long edge is plenty to judge a car's condition. Re-encoding also strips
+ * the original's EXIF, so a customer's own photo does not upload their home
+ * coordinates; Beezy's before/after capture (Phase 5) records location
+ * deliberately and separately.
+ */
+const PHOTO_MAX_EDGE = 1600;
+const PHOTO_QUALITY = 0.82;
+
+/**
+ * Opens the system picker. A file input is the only way a web page reaches
+ * the camera roll, and `capture` asks mobile browsers to open the camera
+ * directly. Must be called from inside a tap handler, before any await, or
+ * Safari refuses to open it.
+ */
+function pickImages(options: { camera: boolean; multiple: boolean }): Promise<File[]> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = options.multiple;
+    if (options.camera) input.setAttribute('capture', 'environment');
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    const finish = (files: File[]) => {
+      input.remove();
+      resolve(files);
+    };
+    input.addEventListener('change', () => finish(Array.from(input.files ?? [])), { once: true });
+    // Fired when the picker is dismissed (Safari 16.4+, Chrome 113+). Older
+    // browsers simply never resolve, which leaves the tile as it was.
+    input.addEventListener('cancel', () => finish([]), { once: true });
+    input.click();
+  });
+}
+
+async function preparePhoto(file: File): Promise<CapturedPhoto> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Could not prepare the photo on this device.');
+  context.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('Could not prepare the photo on this device.'))),
+      'image/jpeg',
+      PHOTO_QUALITY,
+    ),
+  );
+  return {
+    blob,
+    previewUrl: URL.createObjectURL(blob),
+    width,
+    height,
+    capturedAt: new Date(file.lastModified || Date.now()).toISOString(),
+  };
+}
+
 const camera: CameraAdapter = {
   async capture() {
-    throw new NotImplemented('camera.capture', 'Phase 3');
+    const [file] = await pickImages({ camera: true, multiple: false });
+    return file ? preparePhoto(file) : null;
   },
   async pickFromLibrary() {
-    throw new NotImplemented('camera.pickFromLibrary', 'Phase 3');
+    const files = await pickImages({ camera: false, multiple: true });
+    return Promise.all(files.map(preparePhoto));
+  },
+  release(photo) {
+    URL.revokeObjectURL(photo.previewUrl);
   },
   async permission(): Promise<PermissionState> {
     if (!navigator.mediaDevices) return 'unsupported';
@@ -153,8 +225,22 @@ const camera: CameraAdapter = {
 };
 
 const geolocation: GeolocationAdapter = {
-  async current() {
-    throw new NotImplemented('geolocation.current', 'Phase 3');
+  current() {
+    if (!navigator.geolocation) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) =>
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          }),
+        // Denied, unavailable or timed out: the caller falls back to the
+        // typed address, which is always enough to book.
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+      );
+    });
   },
   async permission(): Promise<PermissionState> {
     if (!navigator.geolocation) return 'unsupported';

@@ -651,8 +651,9 @@ have created an account.
    `UPDATE` on `profiles` and gets it back on `full_name`, `phone` and
    `gallery_consent` only. Postgres checks column privileges before any
    policy runs, so `role`, `email` and `deleted_at` are unwritable from the
-   client whatever the policies say. The misleading owner policy is dropped;
-   a `staff update` policy replaces it for correcting a customer's details,
+   client whatever the policies say. The misleading owner policy is renamed
+   and re-scoped into a `staff update` policy (altered in place — see 0023
+   on why nothing here is dropped) for correcting a customer's details,
    still bound by the same column grant. Role changes go through an edge
    function with the service role, as 0001 always intended.
 2. **The allowlist is a `BEFORE INSERT` trigger on `auth.users`.** It aborts
@@ -756,10 +757,9 @@ It refuses the **owner** account with a 409 and a reason the app shows
 verbatim. The owner is the business; deleting it from a phone would leave
 the portal with nobody able to restore access. Ownership moves first.
 
-When `bookings` and `payments` arrive, completed work must be anonymised,
-not deleted (tax records). That step goes in this function, before the
-delete, in the same change that adds those tables — the cascade alone
-would destroy them.
+Since 0005 it also anonymises completed bookings, deletes the rest, and
+removes the user's photo files before deleting the account (0023, item 7).
+`payments` (Phase 4) must join the anonymised set when it arrives.
 
 Reached from ••• → Profile & account → Delete account, with an inline
 confirmation that states what goes and what is kept. On success the app
@@ -768,6 +768,103 @@ clears the session and the profile cache and lands on the signed-out home.
 **Verified** in the built app against stubbed responses: a customer's
 deletion calls the function once, clears every `sb-*` key and the profile
 cache, and lands signed out; the owner's is refused with the reason shown.
+
+---
+
+## 0023 — Bookings are requests, the database polices their shape, and photos stay private
+
+**Date:** 2026-10-01 · **Status:** Active · Migrations `0005_bookings_photos.sql`, `0006_fk_indexes.sql`
+
+**Context.** Phase 3 ends with the customer side on real data: a garage that
+saves, a booking that reaches Beezy, condition photos that upload. Payments
+are Phase 4, so a booking made now cannot hold a deposit.
+
+**Decisions.**
+
+1. **A booking is a request until Beezy confirms it.** It is inserted as
+   `requested`; staff confirm or decline from a *Requests* section on Today
+   (the only live part of the admin portal until Phase 5). The flow's sixth
+   step is *Review*, its button says *Send request*, and the last screen says
+   *Request sent* — not "You're booked", which would be untrue without a
+   deposit or a calendar.
+
+2. **The shape of a customer's write is checked by a trigger, not a policy.**
+   Policies pin ownership. `private.guard_booking_write()` checks what a
+   policy cannot compare: a new booking must be `requested`, in the future,
+   for a car in the customer's own garage, for active services, with no
+   final price or Square id. On update, a customer may change `status` to
+   `cancelled` from `requested`/`confirmed` and nothing else — every other
+   column is compared old-to-new as JSON. Nobody on the client may delete a
+   booking; it is cancelled. Staff and the service role pass straight
+   through.
+
+3. **The stored price is the customer's estimate, not a charge.** The quote
+   is computed on the device by `src/core/pricing.ts` and saved with its line
+   items, so the review screen, the booking and Beezy's view agree. A
+   modified client could save a lower estimate; the trigger cannot re-run the
+   TypeScript pricing engine. That is acceptable only because nothing is
+   charged from it. **Phase 4's deposit function must recompute from
+   `services` server-side and refuse a mismatch** before taking money.
+
+4. **Vehicle text is frozen onto the booking.** `vehicle_label` ("2023
+   Porsche Macan") is written at booking time and `vehicle_id` is
+   `on delete set null`, so removing or editing a car never rewrites history.
+
+5. **Photos are private, foldered, and shrunk on the phone.** Bucket
+   `photos` is private (signed URLs, one hour), JPEG/WebP, 5 MB ceiling.
+   Objects live at `<owner>/<booking>/<file>` and storage policies check the
+   first folder against `auth.uid()`. The camera adapter resizes to 1600px
+   and re-encodes before upload — about 200 KB instead of 3–6 MB against a
+   1 GB free tier — which also strips the original's EXIF, so a customer's
+   own photo does not publish their home coordinates. Customers may add only
+   unpublished `condition` photos to their own bookings.
+
+6. **Invites carry the role.** `tester_allowlist.role` is applied by the
+   signup trigger, so the first owner exists the moment they first sign in
+   with nobody running SQL afterwards. Only the owner may invite `admin` or
+   `owner`; an admin inviting a second address as owner would be the 0004
+   hole one table over. Trey's invite is `owner` until ownership passes to
+   Brandon.
+
+7. **Deleting an account keeps the invoice, not the person.** A `before
+   delete` trigger on `profiles` anonymises complete/paid bookings (customer,
+   vehicle, street address, coordinates, gate code and notes cleared; city,
+   ZIP and money kept) and deletes the rest, whose photos cascade. Because it
+   is on `profiles`, no deletion path — app, dashboard, SQL — can skip it.
+   `delete-account` does the same steps explicitly and also removes the
+   user's storage folder, which no foreign key can reach.
+
+**Applying it, and what is still outstanding.** The Supabase MCP connector
+holds any statement that drops an object or deletes rows for an
+interactive confirmation, which a remote session cannot give; the call
+times out after 60s and nothing is applied. 0004 was therefore written with
+`alter policy … rename` instead of drop-and-create (it had never been
+applied, so editing it was safe), and 0005 was applied in six parts — the
+`bookings_photos_1…6` entries in the project's migration history. Part 7,
+the anonymisation trigger, contains a `delete` and is **still to be run by
+hand in the SQL editor**. Until it is, in-app deletion is still correct
+(the function does the work); only a deletion made from the dashboard
+would skip anonymisation.
+
+**Advisors after applying:** security clean. Performance flagged two
+unindexed foreign keys (fixed by 0006) and "multiple permissive policies"
+— the deliberate own-row-plus-staff pattern used on every table. At this
+size it costs nothing; collapsing each pair into one `or` policy is a
+mechanical change to make if the tables grow.
+
+**Verified.** `rls.test.sql` now also covers: invite roles applied at
+signup, an admin unable to invite an owner, a customer requesting and
+cancelling their own booking, and refused — self-confirming, booking for
+someone else, booking someone else's car, an unknown service, a past time,
+repricing, repricing while cancelling, and deleting; staff seeing and
+confirming every booking; storage uploads outside your own folder refused;
+photo rows for someone else's booking, published, or of kind `after`
+refused; account deletion keeping a paid booking anonymised with its money
+intact, deleting an upcoming one and its photos, and touching nobody
+else's. A mutation check confirmed the repricing assertion fails when the
+guard's column comparison is removed. In the browser, the tour walks the
+booking flow with real image files through the camera adapter and asserts
+the request carries a price and no status, and that both photos upload.
 
 ---
 

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { buildQuote } from '../core/pricing';
-import { SERVICES, VEHICLES, serviceById } from '../core/fixtures';
+import { releasePhoto, useData, type SlotPhoto } from './data';
+import { useSession } from './session';
+import type { CapturedPhoto } from '../lib/platform';
 import type { ConditionTier, Quote, ServiceAddress, SurchargeCode } from '../core/types';
 
 /**
@@ -10,8 +12,9 @@ import type { ConditionTier, Quote, ServiceAddress, SurchargeCode } from '../cor
  * be entered directly (or reloaded) without losing the rest of the answers,
  * and the running total in the footer can read the whole draft.
  *
- * The quote is derived, never stored: it recomputes from the draft on every
- * read, so the footer total and the confirm screen can never disagree.
+ * The quote is derived, never stored: it recomputes from the draft and the
+ * live service menu on every read, so the footer total and the review screen
+ * can never disagree.
  */
 
 export const BOOKING_STEPS = [
@@ -20,17 +23,18 @@ export const BOOKING_STEPS = [
   { path: 'condition', label: 'Condition' },
   { path: 'location', label: 'Location' },
   { path: 'time', label: 'Time' },
-  { path: 'deposit', label: 'Deposit' },
-  { path: 'confirm', label: 'Confirm' },
+  { path: 'review', label: 'Review' },
+  { path: 'confirm', label: 'Requested' },
 ] as const;
 
 export type StepPath = (typeof BOOKING_STEPS)[number]['path'];
 
-/** Placeholder photos, until the camera adapter lands in Phase 3. */
+export type PhotoSlot = 'exterior' | 'interior_front' | 'interior_rear' | 'cargo';
+
 export interface ConditionPhoto {
-  slot: 'exterior' | 'interior_front' | 'interior_rear' | 'cargo';
+  slot: PhotoSlot;
   label: string;
-  captured: boolean;
+  photo?: CapturedPhoto;
 }
 
 interface BookingDraft {
@@ -40,22 +44,27 @@ interface BookingDraft {
   surcharges: SurchargeCode[];
   photos: ConditionPhoto[];
   address?: ServiceAddress;
+  /**
+   * Distance from base for the travel line. A flat in-radius figure until the
+   * maps provider can measure it; inside the included radius it adds nothing.
+   */
   travelMiles: number;
   scheduledAt?: string;
-  cardOnFile: boolean;
-  confirmed: boolean;
+  /** Set once the request has been saved. */
+  submitted?: { bookingId: string; failedPhotos: number };
 }
 
 interface BookingState extends BookingDraft {
+  submitting: boolean;
   toggleService: (id: string) => void;
   setVehicle: (id: string) => void;
   setCondition: (tier: ConditionTier) => void;
   toggleSurcharge: (code: SurchargeCode) => void;
-  capturePhoto: (slot: ConditionPhoto['slot']) => void;
+  setPhoto: (slot: PhotoSlot, photo: CapturedPhoto | undefined) => void;
   setAddress: (address: ServiceAddress) => void;
   setScheduledAt: (iso: string) => void;
-  setCardOnFile: (value: boolean) => void;
-  confirm: () => void;
+  /** Saves the request and uploads the photos. Returns an error to show, or null. */
+  submit: () => Promise<string | null>;
   reset: () => void;
   quote: () => Quote | null;
   /** Whether the given step has enough to move on. */
@@ -63,24 +72,29 @@ interface BookingState extends BookingDraft {
 }
 
 const PHOTO_SLOTS: ConditionPhoto[] = [
-  { slot: 'exterior', label: 'Exterior', captured: false },
-  { slot: 'interior_front', label: 'Front seats', captured: false },
-  { slot: 'interior_rear', label: 'Back seats', captured: false },
-  { slot: 'cargo', label: 'Trunk / cargo', captured: false },
+  { slot: 'exterior', label: 'Exterior' },
+  { slot: 'interior_front', label: 'Front seats' },
+  { slot: 'interior_rear', label: 'Back seats' },
+  { slot: 'cargo', label: 'Trunk / cargo' },
 ];
 
-const initial: BookingDraft = {
+/** Two photos is the floor for an honest quote; four is the ask. */
+export const MIN_PHOTOS = 2;
+
+const initial = (): BookingDraft => ({
   serviceIds: [],
   condition: 'moderate',
   surcharges: [],
-  photos: PHOTO_SLOTS,
+  photos: PHOTO_SLOTS.map((p) => ({ ...p })),
   travelMiles: 12,
-  cardOnFile: false,
-  confirmed: false,
-};
+});
+
+const serviceById = (id: string) => useData.getState().services.find((s) => s.id === id);
+const vehicleById = (id?: string) => useData.getState().vehicles.find((v) => v.id === id);
 
 export const useBooking = create<BookingState>((set, get) => ({
-  ...initial,
+  ...initial(),
+  submitting: false,
 
   toggleService: (id) =>
     set((s) => {
@@ -107,21 +121,56 @@ export const useBooking = create<BookingState>((set, get) => ({
         : [...s.surcharges, code],
     })),
 
-  capturePhoto: (slot) =>
+  setPhoto: (slot, photo) =>
     set((s) => ({
-      photos: s.photos.map((p) => (p.slot === slot ? { ...p, captured: !p.captured } : p)),
+      photos: s.photos.map((p) => {
+        if (p.slot !== slot) return p;
+        if (p.photo && p.photo !== photo) releasePhoto(p.photo);
+        return { ...p, photo };
+      }),
     })),
 
   setAddress: (address) => set({ address }),
   setScheduledAt: (scheduledAt) => set({ scheduledAt }),
-  setCardOnFile: (cardOnFile) => set({ cardOnFile }),
-  confirm: () => set({ confirmed: true }),
-  reset: () => set({ ...initial }),
+
+  async submit() {
+    const s = get();
+    const quote = s.quote();
+    const vehicle = vehicleById(s.vehicleId);
+    const profile = useSession.getState().profile;
+    if (!quote || !vehicle || !s.address || !s.scheduledAt || !profile) {
+      return 'Something’s missing from the booking. Go back a step and check it.';
+    }
+    set({ submitting: true });
+    const photos: SlotPhoto[] = s.photos.flatMap((p) => (p.photo ? [{ slot: p.slot, photo: p.photo }] : []));
+    const result = await useData.getState().requestBooking(
+      {
+        clientId: profile.id,
+        vehicle,
+        serviceIds: s.serviceIds,
+        condition: s.condition,
+        surcharges: s.surcharges,
+        address: s.address,
+        scheduledAt: s.scheduledAt,
+        quote,
+      },
+      photos,
+    );
+    set({ submitting: false });
+    if (result.error || !result.data) return result.error ?? 'Your booking wasn’t sent.';
+    set({ submitted: { bookingId: result.data.booking.id, failedPhotos: result.data.failedPhotos } });
+    return null;
+  },
+
+  reset: () => {
+    get().photos.forEach((p) => p.photo && releasePhoto(p.photo));
+    set({ ...initial(), submitted: undefined, vehicleId: undefined, address: undefined, scheduledAt: undefined });
+  },
 
   quote: () => {
     const s = get();
     const services = s.serviceIds.map(serviceById).filter((x): x is NonNullable<typeof x> => !!x);
-    const vehicle = VEHICLES.find((v) => v.id === s.vehicleId);
+    const vehicle = vehicleById(s.vehicleId);
     if (!services.length || !vehicle) return null;
     return buildQuote({
       services,
@@ -137,22 +186,19 @@ export const useBooking = create<BookingState>((set, get) => ({
     switch (step) {
       case 'service':
         // At least one non-addon: a clay bar with no wash under it is not a job.
-        return s.serviceIds.some((id) => !serviceById(id)?.isAddon);
+        return s.serviceIds.some((id) => serviceById(id) && !serviceById(id)?.isAddon);
       case 'vehicle':
-        return !!s.vehicleId;
+        return !!vehicleById(s.vehicleId);
       case 'condition':
-        // Two photos is the floor for an honest quote; four is the ask.
-        return s.photos.filter((p) => p.captured).length >= 2;
+        return s.photos.filter((p) => p.photo).length >= MIN_PHOTOS;
       case 'location':
-        return !!s.address?.line1;
+        return !!s.address?.line1.trim();
       case 'time':
-        return !!s.scheduledAt;
-      case 'deposit':
-        return s.cardOnFile;
+        return !!s.scheduledAt && new Date(s.scheduledAt).getTime() > Date.now();
+      case 'review':
+        return !!s.quote();
       case 'confirm':
-        return true;
+        return !!s.submitted;
     }
   },
 }));
-
-export const ALL_SERVICES = SERVICES;

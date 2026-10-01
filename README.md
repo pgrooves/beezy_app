@@ -34,8 +34,8 @@ reporting. Role is resolved at auth time and determines the entire shell.
 |---|---|---|
 | 1 | Repo, PWA pipeline, CI → Pages, Supabase base schema, docs | Done |
 | 2 | Navigable shell: both tab bars, every screen, live pricing on fixtures | Done |
-| 3 | Supabase auth, real data, account deletion | **In progress** — sign-in, roles, profile, deletion done; garage and bookings on real data next |
-| 4 | Square deposits, Google Calendar, confirmation email | |
+| 3 | Supabase auth, real data, account deletion | **Done** — one manual SQL step outstanding (DECISIONS.md#0023) |
+| 4 | Square deposits, Google Calendar, confirmation email | Next |
 | 5 | Today, Schedule, Jobs pipeline, Clients, photo checklists | |
 | 6 | Subscriptions | |
 | 7 | Reporting | |

@@ -99,8 +99,12 @@ export interface ServiceAddress {
 
 export interface Booking {
   id: string;
+  /** Empty once anonymised after the customer deleted their account. */
   clientId: string;
+  /** Empty if the car has since left the garage; `vehicleLabel` still reads. */
   vehicleId: string;
+  /** "2023 Porsche Macan", frozen when the booking was made. */
+  vehicleLabel?: string;
   serviceIds: string[];
   condition: ConditionTier;
   surcharges: SurchargeCode[];
@@ -112,6 +116,10 @@ export interface Booking {
   totalCents: number;
   /** Set by the tech on site, approved by the customer before work starts. */
   finalCents?: number;
+  /** Extreme condition: Beezy confirms the price from the photos. */
+  needsReview?: boolean;
+  /** The quote as the customer saw it when they booked. */
+  quoteLines?: LineItem[];
   notes?: string;
   createdAt: string;
   /** Present when the booking originated in Square rather than the app. */

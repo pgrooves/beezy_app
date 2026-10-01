@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, Chip, DemoNote, Field, inputClass } from '../../../components/ui';
+import { Link, Navigate } from 'react-router-dom';
+import { Button, Card, Chip, DemoNote, EmptyState, Field, FormMessage, inputClass } from '../../../components/ui';
 import { cx } from '../../../components/ui/cx';
 import { assetUrl } from '../../../lib/assets';
-import { useBooking } from '../../../app/booking';
+import { MIN_PHOTOS, useBooking, type PhotoSlot } from '../../../app/booking';
+import { useServices, useVehicles } from '../../../app/data';
+import { platform } from '../../../lib/platform';
+import { vehicleLabel } from '../../../core/rows';
 import {
   CONDITION_COPY,
   SIZE_LABEL,
@@ -13,7 +16,6 @@ import {
   formatMoney,
   sizeClassFor,
 } from '../../../core/pricing';
-import { SERVICES, VEHICLES } from '../../../core/fixtures';
 import type { ConditionTier, SurchargeCode } from '../../../core/types';
 
 const StepTitle = ({ title, body }: { title: string; body?: string }) => (
@@ -34,8 +36,19 @@ const StepTitle = ({ title, body }: { title: string; body?: string }) => (
 export function StepService() {
   const selected = useBooking((s) => s.serviceIds);
   const toggle = useBooking((s) => s.toggleService);
-  const base = SERVICES.filter((s) => !s.isAddon);
-  const addons = SERVICES.filter((s) => s.isAddon);
+  const { services, state, retry } = useServices();
+  const base = services.filter((s) => !s.isAddon);
+  const addons = services.filter((s) => s.isAddon);
+
+  if (state === 'error') {
+    return (
+      <EmptyState
+        title="Couldn’t load the menu"
+        body="Check your connection and try again."
+        action={<Button onClick={retry}>Try again</Button>}
+      />
+    );
+  }
   const hasBase = selected.some((id) => base.some((b) => b.id === id));
 
   return (
@@ -143,6 +156,7 @@ export function StepService() {
 export function StepVehicle() {
   const vehicleId = useBooking((s) => s.vehicleId);
   const setVehicle = useBooking((s) => s.setVehicle);
+  const { vehicles } = useVehicles();
 
   return (
     <>
@@ -151,56 +165,44 @@ export function StepVehicle() {
         body="Size affects the price, so we read it off the vehicle rather than asking you."
       />
 
+      {vehicles.length === 0 && (
+        <p className="mb-[var(--space-lg)] text-[14px] leading-[21px] text-[var(--c-ink-muted)]">
+          Your garage is empty. Add the car and it&rsquo;s saved for next time.
+        </p>
+      )}
+
       <div className="space-y-[var(--space-lg)]">
-        {VEHICLES.map((vehicle) => {
+        {vehicles.map((vehicle) => {
           const active = vehicleId === vehicle.id;
           const size = sizeClassFor(vehicle);
           return (
             <Card
               key={vehicle.id}
               onClick={() => setVehicle(vehicle.id)}
-              padded={false}
               className={cx(active && 'ring-2 ring-[var(--c-accent)]')}
             >
-              <div className="flex items-center gap-[var(--space-lg)] p-[var(--space-lg)]">
-                {vehicle.photoUrl && (
-                  <img
-                    src={assetUrl(vehicle.photoUrl)}
-                    alt=""
-                    className="h-16 w-16 shrink-0 rounded-[var(--radius-md)] object-cover"
-                    loading="lazy"
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-[15px] leading-[23px]">
-                    {vehicle.year} {vehicle.make} {vehicle.model}
-                  </h2>
-                  <p className="mt-[2px] text-[13px] leading-[19px] text-[var(--c-ink-muted)]">
-                    {vehicle.colour}
-                  </p>
-                  {/* Stated as a fact with an escape hatch, never as a question. */}
-                  <p className="mt-[var(--space-sm)] text-[12px] leading-[16px] text-[var(--c-ink-subtle)]">
-                    {SIZE_LABEL[size]}
-                    {vehicle.thirdRow && ' · third row'}
-                  </p>
-                </div>
-              </div>
+              <h2 className="text-[15px] leading-[23px]">{vehicleLabel(vehicle)}</h2>
+              {vehicle.colour && (
+                <p className="mt-[2px] text-[13px] leading-[19px] text-[var(--c-ink-muted)]">
+                  {vehicle.colour}
+                </p>
+              )}
+              {/* Stated as a fact with an escape hatch, never as a question. */}
+              <p className="mt-[var(--space-sm)] text-[12px] leading-[16px] text-[var(--c-ink-subtle)]">
+                {SIZE_LABEL[size]}
+                {vehicle.thirdRow && ' · third row'}
+              </p>
             </Card>
           );
         })}
       </div>
 
-      <button
-        type="button"
-        className="eyebrow mt-[var(--space-lg)] w-full rounded-[var(--radius-full)] border border-dashed border-[var(--c-hairline)] py-[var(--space-lg)] text-[var(--c-ink-muted)]"
+      <Link
+        to="/garage/new?return=/book/vehicle"
+        className="eyebrow mt-[var(--space-lg)] block w-full rounded-[var(--radius-full)] border border-dashed border-[var(--c-hairline)] py-[var(--space-lg)] text-center text-[var(--c-ink-muted)]"
       >
-        + Add another vehicle
-      </button>
-
-      <DemoNote>
-        Adding a vehicle and decoding a VIN arrive with the backend. The size band above is
-        computed live by the real pricing engine.
-      </DemoNote>
+        + Add {vehicles.length ? 'another' : 'a'} vehicle
+      </Link>
     </>
   );
 }
@@ -214,12 +216,39 @@ const OPTIONAL_SURCHARGES: SurchargeCode[] = ['pet_hair', 'gulf_sand'];
 
 export function StepCondition() {
   const photos = useBooking((s) => s.photos);
-  const capture = useBooking((s) => s.capturePhoto);
+  const setPhoto = useBooking((s) => s.setPhoto);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const condition = useBooking((s) => s.condition);
   const setCondition = useBooking((s) => s.setCondition);
   const surcharges = useBooking((s) => s.surcharges);
   const toggleSurcharge = useBooking((s) => s.toggleSurcharge);
-  const captured = photos.filter((p) => p.captured).length;
+  const captured = photos.filter((p) => p.photo).length;
+
+  // Called straight from the tap: Safari only opens the camera from inside a
+  // user gesture, so nothing may be awaited before the adapter call.
+  const take = (slot: PhotoSlot) => {
+    setPhotoError(null);
+    platform.camera
+      .capture('vehicle-condition')
+      .then((photo) => photo && setPhoto(slot, photo))
+      .catch(() => setPhotoError('That photo couldn’t be used. Try another.'));
+  };
+
+  const fromLibrary = () => {
+    setPhotoError(null);
+    platform.camera
+      .pickFromLibrary('vehicle-condition')
+      .then((picked) => {
+        // Fill the empty tiles in order; anything beyond four is dropped.
+        const empty = useBooking.getState().photos.filter((p) => !p.photo);
+        picked.forEach((photo, i) => {
+          const slot = empty[i];
+          if (slot) setPhoto(slot.slot, photo);
+          else platform.camera.release(photo);
+        });
+      })
+      .catch(() => setPhotoError('Those photos couldn’t be used. Try others.'));
+  };
 
   return (
     <>
@@ -231,46 +260,59 @@ export function StepCondition() {
       />
 
       <div className="grid grid-cols-2 gap-[var(--space-md)]">
-        {photos.map((photo) => (
-          <button
-            key={photo.slot}
-            type="button"
-            onClick={() => capture(photo.slot)}
-            aria-pressed={photo.captured}
-            className={cx(
-              'flex aspect-[4/3] flex-col items-center justify-center gap-[var(--space-sm)] rounded-[var(--radius-card)] border text-center transition-colors',
-              photo.captured
-                ? 'border-[var(--c-accent)] bg-[var(--c-surface-alt)]'
-                : 'border-dashed border-[var(--c-hairline)]',
-            )}
-            style={{ transitionDuration: 'var(--motion-fast)' }}
-          >
-            <span aria-hidden className="text-[var(--c-ink-subtle)]">
-              {photo.captured ? (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="m5 12.5 4.5 4.5L19 7.5"
-                    stroke="var(--c-accent-text)"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
+        {photos.map((tile) =>
+          tile.photo ? (
+            <div key={tile.slot} className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--c-accent)]">
+              <button
+                type="button"
+                onClick={() => take(tile.slot)}
+                aria-label={`Retake ${tile.label}`}
+                className="block w-full"
+              >
+                <img src={tile.photo.previewUrl} alt={tile.label} className="aspect-[4/3] w-full object-cover" />
+              </button>
+              <span className="eyebrow pointer-events-none absolute bottom-[var(--space-sm)] left-[var(--space-sm)] rounded-[var(--radius-full)] bg-[var(--c-scrim)] px-[var(--space-md)] py-[2px] text-[9px] text-white">
+                {tile.label}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPhoto(tile.slot, undefined)}
+                aria-label={`Remove ${tile.label} photo`}
+                className="absolute right-[var(--space-xs)] top-[var(--space-xs)] flex h-11 w-11 items-center justify-center"
+              >
+                <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--c-scrim)] text-[14px] text-white">
+                  ×
+                </span>
+              </button>
+            </div>
+          ) : (
+            <button
+              key={tile.slot}
+              type="button"
+              onClick={() => take(tile.slot)}
+              className="flex aspect-[4/3] flex-col items-center justify-center gap-[var(--space-sm)] rounded-[var(--radius-card)] border border-dashed border-[var(--c-hairline)] text-center"
+            >
+              <span aria-hidden className="text-[var(--c-ink-subtle)]">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <rect x="3" y="7" width="18" height="13" rx="2.5" strokeWidth="1.5" />
                   <circle cx="12" cy="13.5" r="3.5" strokeWidth="1.5" />
                   <path d="M8.5 7 10 4.5h4L15.5 7" strokeWidth="1.5" strokeLinejoin="round" />
                 </svg>
-              )}
-            </span>
-            <span className="eyebrow text-[9px] text-[var(--c-ink-muted)]">{photo.label}</span>
-          </button>
-        ))}
+              </span>
+              <span className="eyebrow text-[9px] text-[var(--c-ink-muted)]">{tile.label}</span>
+            </button>
+          ),
+        )}
       </div>
-      <p className="mt-[var(--space-md)] text-center text-[12px] leading-[17px] text-[var(--c-ink-subtle)]">
-        {captured} of 4 added
-      </p>
+      <div className="mt-[var(--space-md)] flex items-center justify-between gap-[var(--space-lg)]">
+        <p className="text-[12px] leading-[17px] text-[var(--c-ink-subtle)]">
+          {captured} of 4 added{captured < MIN_PHOTOS && ` · ${MIN_PHOTOS} needed`}
+        </p>
+        <button type="button" onClick={fromLibrary} className="eyebrow min-h-11 text-[var(--c-ink-muted)]">
+          Choose from photos
+        </button>
+      </div>
+      {photoError && <FormMessage>{photoError}</FormMessage>}
 
       <h2 className="eyebrow mb-[var(--space-lg)] mt-[var(--space-2xl)] text-[var(--c-ink-subtle)]">
         How is it looking?
@@ -327,10 +369,6 @@ export function StepCondition() {
         })}
       </div>
 
-      <DemoNote>
-        Tapping a tile marks the photo as added. Real capture needs the camera adapter, which
-        lands with the backend work.
-      </DemoNote>
     </>
   );
 }
@@ -349,7 +387,26 @@ export function StepLocation() {
     gateCode: address?.gateCode ?? '',
     parkingNotes: address?.parkingNotes ?? '',
     covered: address?.covered ?? false,
+    lat: address?.lat,
+    lng: address?.lng,
   });
+  const [locating, setLocating] = useState(false);
+  const [pinNote, setPinNote] = useState<string | null>(null);
+
+  // Optional, and asked for only when tapped: the address alone is enough to
+  // book. A pin helps the van find a driveway the map gets wrong.
+  const dropPin = async () => {
+    setLocating(true);
+    setPinNote(null);
+    const here = await platform.geolocation.current();
+    setLocating(false);
+    if (!here) {
+      setPinNote('Couldn’t get your location. The address is enough.');
+      return;
+    }
+    update({ lat: here.latitude, lng: here.longitude });
+    setPinNote('Pinned. Beezy will drive to exactly where you are now.');
+  };
 
   const update = (patch: Partial<typeof form>) => {
     const next = { ...form, ...patch };
@@ -407,6 +464,23 @@ export function StepLocation() {
             className={cx(inputClass, 'resize-none')}
           />
         </Field>
+
+        <Card onClick={() => void dropPin()}>
+          <div className="flex items-center justify-between gap-[var(--space-lg)]">
+            <div className="min-w-0">
+              <h3 className="text-[15px] leading-[23px]">
+                {form.lat !== undefined ? 'Location pinned' : 'Pin my exact spot'}
+              </h3>
+              <p className="mt-[2px] text-[13px] leading-[19px] text-[var(--c-ink-muted)]">
+                {locating
+                  ? 'Finding you…'
+                  : 'Optional. Beezy uses your location to confirm your service address and to route the van to you.'}
+              </p>
+            </div>
+            {form.lat !== undefined && <Chip tone="success">Pinned</Chip>}
+          </div>
+        </Card>
+        {pinNote && <p role="status" className="text-[12px] leading-[17px] text-[var(--c-ink-subtle)]">{pinNote}</p>}
 
         <Card onClick={() => update({ covered: !form.covered })}>
           <div className="flex items-center justify-between gap-[var(--space-lg)]">
@@ -550,31 +624,45 @@ export function StepTime() {
       </div>
 
       <DemoNote>
-        Slot lengths already come from the live pricing engine. Real availability needs the
-        calendar sync, which is third-party work.
+        Slot lengths come from the live pricing engine. Beezy&rsquo;s own calendar isn&rsquo;t
+        connected yet, so the time is a request until Beezy confirms it.
       </DemoNote>
     </>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 6. Deposit
+// 6. Review
 // ---------------------------------------------------------------------------
 
-export function StepDeposit() {
-  const quote = useBooking().quote();
-  const cardOnFile = useBooking((s) => s.cardOnFile);
-  const setCardOnFile = useBooking((s) => s.setCardOnFile);
+export function StepReview() {
+  const draft = useBooking();
+  const quote = draft.quote();
+  const { services } = useServices();
+  const { vehicles } = useVehicles();
+  const vehicle = vehicles.find((v) => v.id === draft.vehicleId);
+  const names = draft.serviceIds.map((id) => services.find((s) => s.id === id)?.name).filter(Boolean);
+  const photos = draft.photos.filter((p) => p.photo).length;
 
   return (
     <>
       <StepTitle
-        title="Hold the slot"
-        body="A deposit keeps the time yours. It comes off the final bill."
+        title="Look right?"
+        body="Send it over and Beezy confirms the time by text. Nothing is charged today."
       />
 
+      <Card>
+        <dl className="space-y-[var(--space-lg)]">
+          <Row term="When" value={draft.scheduledAt ? fullDate.format(new Date(draft.scheduledAt)) : '—'} />
+          <Row term="Service" value={names.join(' + ') || '—'} />
+          <Row term="Vehicle" value={vehicle ? vehicleLabel(vehicle) : '—'} />
+          <Row term="Where" value={draft.address ? `${draft.address.line1}, ${draft.address.city}` : '—'} />
+          <Row term="Photos" value={`${photos} attached`} />
+        </dl>
+      </Card>
+
       {quote && (
-        <Card>
+        <Card className="mt-[var(--space-lg)]">
           <ul className="space-y-[var(--space-md)]">
             {quote.lines.map((line, i) => (
               <li key={i} className="flex items-baseline justify-between gap-[var(--space-lg)]">
@@ -594,12 +682,10 @@ export function StepDeposit() {
           </ul>
           <div className="mt-[var(--space-lg)] flex items-baseline justify-between border-t border-[var(--c-hairline)] pt-[var(--space-lg)]">
             <span className="eyebrow text-[var(--c-ink-subtle)]">Estimated total</span>
-            <span className="money text-[24px] leading-[30px]">
-              {formatMoney(quote.subtotalCents)}
-            </span>
+            <span className="money text-[24px] leading-[30px]">{formatMoney(quote.subtotalCents)}</span>
           </div>
           <div className="mt-[var(--space-md)] flex items-baseline justify-between">
-            <span className="eyebrow text-[var(--c-accent-text)]">Due today</span>
+            <span className="eyebrow text-[var(--c-accent-text)]">Deposit</span>
             <span className="money text-[20px] leading-[26px] text-[var(--c-accent-text)]">
               {formatMoney(quote.depositCents)}
             </span>
@@ -607,35 +693,16 @@ export function StepDeposit() {
         </Card>
       )}
 
-      <Card
-        onClick={() => setCardOnFile(!cardOnFile)}
-        className={cx('mt-[var(--space-lg)]', cardOnFile && 'ring-2 ring-[var(--c-accent)]')}
-      >
-        <div className="flex items-center justify-between gap-[var(--space-lg)]">
-          <div className="min-w-0">
-            <h3 className="text-[15px] leading-[23px]">
-              {cardOnFile ? 'Visa ending 4242' : 'Add a card'}
-            </h3>
-            <p className="mt-[2px] text-[13px] leading-[19px] text-[var(--c-ink-muted)]">
-              {cardOnFile
-                ? 'Charged when you confirm. Balance due after the work.'
-                : 'Card details go straight to Square — we never see the number.'}
-            </p>
-          </div>
-          <Toggle on={cardOnFile} />
-        </div>
-      </Card>
-
       <DemoNote>
-        Tapping the card stands in for Square&rsquo;s payment sheet. No card is stored and nothing
-        is charged — Square is third-party work saved for after the shell.
+        The deposit isn&rsquo;t taken in the app yet — card payments through Square come next.
+        Until then Beezy confirms by text and takes payment on the day.
       </DemoNote>
     </>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 7. Confirm
+// 7. Requested
 // ---------------------------------------------------------------------------
 
 const fullDate = new Intl.DateTimeFormat('en-US', {
@@ -649,18 +716,22 @@ const fullDate = new Intl.DateTimeFormat('en-US', {
 export function StepConfirm() {
   const draft = useBooking();
   const quote = draft.quote();
-  const vehicle = VEHICLES.find((v) => v.id === draft.vehicleId);
-  const services = draft.serviceIds
-    .map((id) => SERVICES.find((s) => s.id === id))
-    .filter(Boolean);
+  const { services } = useServices();
+  const { vehicles } = useVehicles();
+
+  // Only reachable by sending a request; a deep link lands on the review.
+  if (!draft.submitted) return <Navigate to="/book/review" replace />;
+
+  const vehicle = vehicles.find((v) => v.id === draft.vehicleId);
+  const names = draft.serviceIds.map((id) => services.find((s) => s.id === id)?.name).filter(Boolean);
+  const failed = draft.submitted.failedPhotos;
 
   return (
     <>
       <div className="mb-[var(--space-2xl)] text-center">
         <div
           aria-hidden
-          className="mx-auto mb-[var(--space-lg)] flex h-14 w-14 items-center justify-center rounded-full bg-[var(--c-accent)]"
-          style={{ opacity: 0.16 }}
+          className="mx-auto mb-[var(--space-lg)] flex h-14 w-14 items-center justify-center rounded-full bg-[var(--c-surface-alt)]"
         >
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path
@@ -672,52 +743,38 @@ export function StepConfirm() {
             />
           </svg>
         </div>
-        <h1 className="font-display text-[28px] leading-[34px]">You&rsquo;re booked</h1>
+        <h1 className="font-display text-[28px] leading-[34px]">Request sent</h1>
         <p className="mx-auto mt-[var(--space-sm)] max-w-[30ch] text-[15px] leading-[23px] text-[var(--c-ink-muted)]">
-          Beezy will text you the morning of. Reminders at 72 and 24 hours.
+          Beezy will confirm the time by text. You&rsquo;ll see it change to Confirmed here too.
         </p>
       </div>
 
       <Card>
         <dl className="space-y-[var(--space-lg)]">
           <Row term="When" value={draft.scheduledAt ? fullDate.format(new Date(draft.scheduledAt)) : '—'} />
-          <Row term="Service" value={services.map((s) => s?.name).join(' + ') || '—'} />
-          <Row
-            term="Vehicle"
-            value={vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : '—'}
-          />
-          <Row
-            term="Where"
-            value={draft.address ? `${draft.address.line1}, ${draft.address.city}` : '—'}
-          />
-          {quote && (
-            <>
-              <Row term="Estimate" value={formatMoney(quote.subtotalCents)} />
-              <Row term="Paid today" value={formatMoney(quote.depositCents)} />
-            </>
-          )}
+          <Row term="Service" value={names.join(' + ') || '—'} />
+          <Row term="Vehicle" value={vehicle ? vehicleLabel(vehicle) : '—'} />
+          <Row term="Where" value={draft.address ? `${draft.address.line1}, ${draft.address.city}` : '—'} />
+          {quote && <Row term="Estimate" value={formatMoney(quote.subtotalCents)} />}
         </dl>
       </Card>
 
-      <div className="mt-[var(--space-lg)] space-y-[var(--space-md)]">
-        <button
-          type="button"
-          className="eyebrow w-full rounded-[var(--radius-full)] border border-[var(--c-hairline)] py-[var(--space-lg)] text-[var(--c-ink)]"
-        >
-          Add to calendar
-        </button>
+      {failed > 0 && (
+        <FormMessage>
+          {failed === 1 ? 'One photo' : `${failed} photos`} didn&rsquo;t upload. The booking is
+          saved; Beezy may ask you to text them over.
+        </FormMessage>
+      )}
+
+      <div className="mt-[var(--space-lg)]">
         <Link
           to="/"
+          onClick={() => useBooking.getState().reset()}
           className="eyebrow block w-full rounded-[var(--radius-full)] py-[var(--space-lg)] text-center text-[var(--c-ink-muted)]"
         >
           Back to home
         </Link>
       </div>
-
-      <DemoNote>
-        Nothing was saved or charged — this is the shell. Confirmation email, calendar sync and
-        the deposit arrive with the integrations.
-      </DemoNote>
     </>
   );
 }
