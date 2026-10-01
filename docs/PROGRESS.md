@@ -63,10 +63,11 @@ app** — the code, database and deploy are ready and waiting.
       (https://supabase.com/dashboard/project/bdbarnvjktpfdogcfjvx/sql/new).
       The Supabase MCP connector cannot run it from a session — it holds any
       statement that deletes rows for a confirmation that never arrives
-      ([DECISIONS.md#0023](DECISIONS.md)). The SQL is part 7 of
-      `supabase/migrations/0005_bookings_photos.sql` (the function
-      `private.anonymise_bookings_on_profile_delete` and the
-      `profiles_anonymise_bookings` trigger). Not blocking: in-app deletion
+      ([DECISIONS.md#0023](DECISIONS.md)). Copy it from
+      `supabase/manual/0005_part7_anonymise.sql` (raw on GitHub), not from a
+      chat: phones turn `old.id` into a link and indentation into
+      non-breaking spaces, which failed on 2026-10-01 with a syntax error at
+      "before". Not blocking: in-app deletion
       already anonymises; only dashboard deletions would skip it. After it
       runs, a session should confirm the trigger exists.
 
