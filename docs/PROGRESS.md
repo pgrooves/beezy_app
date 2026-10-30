@@ -10,7 +10,7 @@ moment it is discovered, and keep the "Next up" section true. Reasoning
 belongs in [DECISIONS.md](DECISIONS.md); this file links to it rather than
 repeating it.
 
-_Last updated: 2026-10-30 — Chauffeur C1 (front door) on main; C2 (trip builder preview on sample rates) built on branch `chauffeur-c2`. Phase 4 is still next for Detailing; the credentials handover is unchanged._
+_Last updated: 2026-10-30 — Chauffeur C1 (front door) on main; C2 (trip builder preview on sample rates) on main and deploying to testers. Phase 4 is still next for Detailing; the credentials handover is unchanged._
 
 ---
 
@@ -34,7 +34,7 @@ A second line of business behind a front door at launch. Sizes are relative.
 | Step | Scope | Size | State |
 |---|---|---|---|
 | C1 | Front door, line switch, Detailing home at `/detailing`, Chauffeur placeholder | S | **Done 2026-10-30**, on main |
-| C2 | Chauffeur customer screens on fixtures: trip builder, live estimate, review ([#0025](DECISIONS.md)) | M | **Built 2026-10-30** on branch `chauffeur-c2` |
+| C2 | Chauffeur customer screens on fixtures: trip builder, live estimate, review ([#0025](DECISIONS.md)) | M | **Done 2026-10-30**, on main |
 | C3 | `business_line`, `trips`, `trip_stops`, `fleet_vehicles`, `rate_cards` + RLS; `quote-trip` and `places` edge functions | L | Waits on the questions below and a Google Maps billing account |
 | C4 | Dispatch on Today: lanes per person and vehicle, conflict check, calendar sync per line | M | Waits on Phase 4 calendar sync |
 | C5 | Chauffeur's view, live trip status, "on location" text | M | Waits on Phase 8 SMS |
