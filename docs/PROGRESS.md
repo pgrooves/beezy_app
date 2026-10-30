@@ -10,7 +10,7 @@ moment it is discovered, and keep the "Next up" section true. Reasoning
 belongs in [DECISIONS.md](DECISIONS.md); this file links to it rather than
 repeating it.
 
-_Last updated: 2026-10-30 — Chauffeur scoped; step C1 (the Detailing / Chauffeur front door) built on branch `chauffeur-front-door`, not merged. Phase 4 is still next for Detailing; the credentials handover is unchanged._
+_Last updated: 2026-10-30 — Chauffeur scoped; step C1 (the Detailing / Chauffeur front door) merged to main and deploying to testers. Phase 4 is still next for Detailing; the credentials handover is unchanged._
 
 ---
 
@@ -33,7 +33,7 @@ A second line of business behind a front door at launch. Sizes are relative.
 
 | Step | Scope | Size | State |
 |---|---|---|---|
-| C1 | Front door, line switch, Detailing home at `/detailing`, Chauffeur placeholder | S | **Built 2026-10-30** on branch `chauffeur-front-door`; merging deploys it to testers |
+| C1 | Front door, line switch, Detailing home at `/detailing`, Chauffeur placeholder | S | **Done 2026-10-30**, on main |
 | C2 | Chauffeur customer screens on fixtures: trip builder, live estimate, review, request | M | |
 | C3 | `business_line`, `trips`, `trip_stops`, `fleet_vehicles`, `rate_cards` + RLS; `quote-trip` and `places` edge functions | L | Waits on the questions below and a Google Maps billing account |
 | C4 | Dispatch on Today: lanes per person and vehicle, conflict check, calendar sync per line | M | Waits on Phase 4 calendar sync |
@@ -91,8 +91,8 @@ app** — the code, database and deploy are ready and waiting.
 
 ## Waiting on Trey and Brandon: Chauffeur (blocks C3)
 
-- [ ] **Merge C1 or hold it.** Merging puts the front door in front of
-      testers, with Chauffeur shown as *Coming soon*.
+- [x] _Merge C1 — done 2026-10-30 at Trey's request. Testers now see the
+      front door, with Chauffeur shown as *Coming soon*._
 - [ ] **Own vehicles, or a partner operator at first?** Decides whether
       Fleet is a real screen or a list of classes.
 - [ ] **The vehicles:** make and model, seats, bag space, how many.
