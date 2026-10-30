@@ -768,7 +768,7 @@ export function StepConfirm() {
 
       <div className="mt-[var(--space-lg)]">
         <Link
-          to="/"
+          to="/detailing"
           onClick={() => useBooking.getState().reset()}
           className="eyebrow block w-full rounded-[var(--radius-full)] py-[var(--space-lg)] text-center text-[var(--c-ink-muted)]"
         >

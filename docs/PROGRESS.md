@@ -10,7 +10,7 @@ moment it is discovered, and keep the "Next up" section true. Reasoning
 belongs in [DECISIONS.md](DECISIONS.md); this file links to it rather than
 repeating it.
 
-_Last updated: 2026-10-01 — Phase 3 deployed; anonymisation trigger live; Trey's account exists as owner. Only the credentials handover remains._
+_Last updated: 2026-10-30 — Chauffeur scoped; step C1 (the Detailing / Chauffeur front door) built on branch `chauffeur-front-door`, not merged. Phase 4 is still next for Detailing; the credentials handover is unchanged._
 
 ---
 
@@ -26,6 +26,18 @@ _Last updated: 2026-10-01 — Phase 3 deployed; anonymisation trigger live; Trey
 | 6 | Subscriptions | |
 | 7 | Reporting | |
 | 8 | Push, SMS, referrals, production Square, store submission | |
+
+### Chauffeur track ([DECISIONS.md#0024](DECISIONS.md))
+
+A second line of business behind a front door at launch. Sizes are relative.
+
+| Step | Scope | Size | State |
+|---|---|---|---|
+| C1 | Front door, line switch, Detailing home at `/detailing`, Chauffeur placeholder | S | **Built 2026-10-30** on branch `chauffeur-front-door`; merging deploys it to testers |
+| C2 | Chauffeur customer screens on fixtures: trip builder, live estimate, review, request | M | |
+| C3 | `business_line`, `trips`, `trip_stops`, `fleet_vehicles`, `rate_cards` + RLS; `quote-trip` and `places` edge functions | L | Waits on the questions below and a Google Maps billing account |
+| C4 | Dispatch on Today: lanes per person and vehicle, conflict check, calendar sync per line | M | Waits on Phase 4 calendar sync |
+| C5 | Chauffeur's view, live trip status, "on location" text | M | Waits on Phase 8 SMS |
 
 ---
 
@@ -77,6 +89,23 @@ app** — the code, database and deploy are ready and waiting.
       already anonymises; only dashboard deletions would skip it. After it
       runs, a session should confirm the trigger exists.
 
+## Waiting on Trey and Brandon: Chauffeur (blocks C3)
+
+- [ ] **Merge C1 or hold it.** Merging puts the front door in front of
+      testers, with Chauffeur shown as *Coming soon*.
+- [ ] **Own vehicles, or a partner operator at first?** Decides whether
+      Fleet is a real screen or a list of classes.
+- [ ] **The vehicles:** make and model, seats, bag space, how many.
+- [ ] **Rates:** hourly and minimum hours per class, airport flat rate,
+      extra-stop fee, after-hours fee, gratuity included or added.
+- [ ] **Permits and insurance.** New Orleans for-hire permits (CPNC per
+      vehicle, permit per driver, via the Ground Transportation Bureau, as
+      we understand it) and commercial auto cover. Confirm before any paid
+      trip.
+- [ ] **Service area** (MSY and Greater New Orleans only?), **name and
+      mark** ("Beezy Chauffeur" under the current logo?), **cancellation and
+      wait-time policy**, and who drives at launch.
+
 ## After the handover, verify
 
 - [ ] Sign in as `trey@pgrooves.com` on an installed iPhone: code arrives,
@@ -104,6 +133,9 @@ yet available:
 - **Confirmation email** to the customer when Beezy confirms (same SMTP
   decision as item 1).
 
+Chauffeur C2 can run alongside Phase 4: it is screens on fixtures and
+touches nothing Phase 4 changes.
+
 ## Things a new session should know
 
 - **Supabase MCP and destructive SQL.** `apply_migration` / `execute_sql`
@@ -124,3 +156,8 @@ yet available:
   `supabase/tests/run.sh` against a local Postgres, a build with
   `VITE_SUPABASE_ANON_KEY=tour`, then `node scripts/tour.mjs` against it
   ([TESTING.md](TESTING.md), [DECISIONS.md#0015](DECISIONS.md)).
+- **Running the tour locally,** build with the real `VITE_SUPABASE_URL`
+  (the fake intercepts that host, not any other) and copy `dist/404.html`
+  to the server root as well: `npx serve` does not serve the app's own
+  404 for deep links the way Pages does, and the booking flow starts in a
+  fresh context with no service worker to cover for it.

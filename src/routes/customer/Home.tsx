@@ -7,6 +7,7 @@ import { firstName } from '../../core/profile';
 import { assetUrl } from '../../lib/assets';
 import { formatMoney } from '../../core/pricing';
 import { photoPairs } from '../../core/fixtures';
+import { LineSwitch } from '../../components/nav/LineSwitch';
 import type { Booking } from '../../core/types';
 
 const dayFormat = new Intl.DateTimeFormat('en-US', {
@@ -35,7 +36,11 @@ export default function Home() {
   const name = profile ? firstName(profile) : '';
   return (
     <Screen>
-      <ScreenHeader eyebrow="Good to see you" title={name || 'Welcome back'} />
+      <ScreenHeader
+        eyebrow="Good to see you"
+        title={name || 'Welcome back'}
+        action={<LineSwitch line="detailing" />}
+      />
       <div className="h-[var(--space-lg)]" />
       <SignedInHome />
     </Screen>
@@ -89,7 +94,7 @@ function Welcome() {
   const pair = photoPairs()[0];
   return (
     <Screen>
-      <ScreenHeader eyebrow="Mobile detailing" title="Beezy" />
+      <ScreenHeader eyebrow="Mobile detailing" title="Beezy" action={<LineSwitch line="detailing" />} />
 
       <p className="mt-[var(--space-lg)] text-[17px] leading-[26px] text-[var(--c-ink-muted)]">
         Make life easy, call Beezy. We come to your driveway anywhere in Greater New Orleans —

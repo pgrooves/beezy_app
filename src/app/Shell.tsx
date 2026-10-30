@@ -6,6 +6,7 @@ import { AccountFooter } from '../components/nav/AccountFooter';
 import { UpdatePrompt } from '../components/UpdatePrompt';
 import { useSession } from './session';
 import { moreForRole, tabsForRole } from './routes';
+import { lineForPath } from '../core/lines';
 
 /**
  * The app frame: whichever tab bar the role calls for, the More sheet, and the
@@ -26,7 +27,15 @@ export function Shell() {
   // The booking flow owns the full screen: its own footer carries the running
   // total and the next-step button, and a tab bar over that is two competing
   // bottom bars.
-  const immersive = location.pathname.startsWith('/book/');
+  //
+  // The front door and Chauffeur's placeholder have no tabs to offer yet:
+  // the door is a choice, not a place, and Chauffeur has one screen.
+  const { pathname } = location;
+  const immersive =
+    pathname.startsWith('/book/') ||
+    pathname === '/' ||
+    pathname === '/choose' ||
+    lineForPath(pathname) === 'chauffeur';
 
   return (
     <div className="min-h-dvh">

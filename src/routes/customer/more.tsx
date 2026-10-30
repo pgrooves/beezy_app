@@ -69,7 +69,7 @@ export function BookingDetail() {
   if (state !== 'ready') {
     return (
       <Screen>
-        <DetailHeader to="/" label="Home" />
+        <DetailHeader to="/detailing" label="Home" />
       </Screen>
     );
   }
@@ -78,7 +78,7 @@ export function BookingDetail() {
     return (
       <Screen>
         <ScreenHeader title="Not found" />
-        <EmptyState title="No such booking" body="It may have been removed." action={<Button to="/">Home</Button>} />
+        <EmptyState title="No such booking" body="It may have been removed." action={<Button to="/detailing">Home</Button>} />
       </Screen>
     );
   }
@@ -88,7 +88,7 @@ export function BookingDetail() {
 
   return (
     <Screen>
-      <DetailHeader to="/" label="Home" />
+      <DetailHeader to="/detailing" label="Home" />
       <h1 className="font-display mt-[var(--space-lg)] text-[28px] leading-[34px]">{names.join(' + ')}</h1>
       <p className="tabular mt-[var(--space-sm)] text-[15px] leading-[23px] text-[var(--c-ink-muted)]">
         {longDate.format(new Date(booking.scheduledAt))}

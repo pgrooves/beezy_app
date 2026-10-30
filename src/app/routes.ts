@@ -32,7 +32,7 @@ export interface MoreLink {
 // ---------------------------------------------------------------------------
 
 export const CUSTOMER_TABS: TabDef[] = [
-  { path: '/', label: 'Home', icon: 'home', end: true },
+  { path: '/detailing', label: 'Home', icon: 'home', end: true },
   { path: '/book', label: 'Book', icon: 'book' },
   { path: '/garage', label: 'Garage', icon: 'garage' },
   { path: '/gallery', label: 'Gallery', icon: 'gallery' },
@@ -51,6 +51,7 @@ export const CUSTOMER_MORE: { title?: string; links: MoreLink[] }[] = [
   {
     title: 'Beezy',
     links: [
+      { to: '/choose', label: 'Detailing or Chauffeur', detail: 'Switch service' },
       { to: '/about', label: 'About Beezy' },
       { to: '/service-area', label: 'Service area' },
       { to: '/faq', label: 'FAQ' },
@@ -146,7 +147,10 @@ export function moreForRole(role: Role): { title?: string; links: MoreLink[] }[]
   return CUSTOMER_MORE;
 }
 
-/** The screen a role lands on at sign-in. */
+/**
+ * The screen a role lands on at sign-in. A customer's `/` is the launch
+ * route, which reopens their last line or shows the front door (#0024).
+ */
 export function homeForRole(role: Role): string {
   return role === 'customer' ? '/' : '/admin';
 }
@@ -156,4 +160,4 @@ export function homeForRole(role: Role): string {
  * gating content that does not require an account. Login is required only at
  * booking, garage and payment.
  */
-export const PUBLIC_PATHS = ['/gallery', '/about', '/service-area', '/faq', '/services'];
+export const PUBLIC_PATHS = ['/', '/choose', '/detailing', '/chauffeur', '/gallery', '/about', '/service-area', '/faq', '/services'];

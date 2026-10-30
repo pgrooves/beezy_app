@@ -46,6 +46,11 @@ which version you were on — **include it in every report**.
 **Signing in is new.** The app is invite-only during the beta: Beezy adds your
 email first, then you sign in with a code.
 
+- [ ] The app opens on a choice: **Detailing** or **Chauffeur**. Chauffeur
+      says *Coming soon* and has a way back
+- [ ] Pick Detailing, close the app and reopen it: it goes straight to
+      Detailing. The **Detailing** pill on Home, or ••• → **Detailing or
+      Chauffeur**, brings the choice back
 - [ ] Signed out, the home screen, Gallery, About, Service area and FAQ all open
 - [ ] Book or Garage asks you to sign in, and brings you back there afterwards
 - [ ] Enter your email → a six-digit code arrives (check spam) → you're in.

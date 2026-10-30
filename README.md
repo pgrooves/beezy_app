@@ -9,6 +9,10 @@ Two experiences behind one login: a customer app for booking, garage and
 gallery, and an admin/tech portal for the day's jobs, schedule, clients and
 reporting. Role is resolved at auth time and determines the entire shell.
 
+Customers open on a front door with Beezy's two lines of business: Detailing,
+and Chauffeur, which is scoped and coming next
+([DECISIONS.md#0024](docs/DECISIONS.md)).
+
 **Beta:** installable PWA at **https://pgrooves.github.io/beezy_app/**
 (lower-case — Pages URLs are case-sensitive)
 **Later:** App Store and Google Play, from this same codebase.

@@ -27,14 +27,18 @@ const only = process.env.ONLY;
  * signed out. A fourth entry is where the app should send that visitor.
  */
 const SCREENS = [
-  ['welcome', '/', null],
+  ['door', '/', null],
+  ['welcome', '/detailing', null],
+  ['chauffeur', '/chauffeur', null],
   ['sign-in', '/sign-in', null],
   ['gallery-signed-out', '/gallery', null],
   ['about-signed-out', '/about', null],
   ['garage-signed-out', '/garage', null, '/sign-in?next=%2Fgarage'],
   ['admin-signed-out', '/admin/clients', null, '/sign-in?next=%2Fadmin%2Fclients'],
   ['admin-as-customer', '/admin/clients', 'customer', '/'],
-  ['home', '/', 'customer'],
+  ['home', '/detailing', 'customer'],
+  ['choose', '/choose', 'customer'],
+  ['owner-launch', '/', 'owner', '/admin'],
   ['garage', '/garage', 'customer'],
   ['garage-vehicle', `/garage/${TOUR_IDS.macan}`, 'customer'],
   ['garage-new', '/garage/new', 'customer'],

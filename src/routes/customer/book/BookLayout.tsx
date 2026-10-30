@@ -69,7 +69,7 @@ export function BookLayout() {
   }
 
   const goBack = () => {
-    if (index <= 0 || isLast) navigate('/');
+    if (index <= 0 || isLast) navigate('/detailing');
     else navigate(`/book/${BOOKING_STEPS[index - 1]!.path}`);
   };
 

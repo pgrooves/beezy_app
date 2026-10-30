@@ -9,6 +9,8 @@ import { BOOKING_STEPS } from './booking';
 import SignIn from '../routes/auth/SignIn';
 import ProfileScreen from '../routes/account/Profile';
 import Home from '../routes/customer/Home';
+import ChauffeurHome from '../routes/chauffeur/Home';
+import { FrontDoor, Launch } from '../routes/door/FrontDoor';
 import Garage, { VehicleDetail, VehicleForm } from '../routes/customer/Garage';
 import Gallery from '../routes/customer/Gallery';
 import { BookLayout } from '../routes/customer/book/BookLayout';
@@ -69,7 +71,13 @@ export default function App() {
         <Route element={<Shell />}>
           {/* Open to everyone. Guideline 5.1.1(iv): content that does not
               need an account must not sit behind one. */}
-          <Route path="/" element={<Home />} />
+          {/* The front door: `/` reopens the customer's last line or asks
+              which one they want (DECISIONS.md#0024). Detailing kept its
+              original paths; only its home moved. */}
+          <Route path="/" element={<Launch />} />
+          <Route path="/choose" element={<FrontDoor />} />
+          <Route path="/detailing" element={<Home />} />
+          <Route path="/chauffeur" element={<ChauffeurHome />} />
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/about" element={<AboutScreen />} />

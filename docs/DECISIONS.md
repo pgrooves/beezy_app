@@ -868,6 +868,55 @@ the request carries a price and no status, and that both photos upload.
 
 ---
 
+## 0024 — Two lines of business behind one front door
+
+**Date:** 2026-10-30 · **Status:** Active (step C1 built) · No migration
+
+**Context.** Beezy is adding a chauffeur service alongside detailing. The
+scope is in the proposal written on 2026-10-30: a customer builds a
+trip stop by stop, sees a live estimate, requests it, and it lands on the
+same Google Calendar and the same Today as detailing. The question for this
+first step is how to split the app.
+
+**Decisions.**
+
+1. **One app with a front door, not two apps.** Two codebases would mean
+   auth, RLS, CI, the design system and deploys twice, permanently. Two
+   installable icons from one codebase (a second manifest and start URL)
+   stays open for the store submission in Phase 8 if Brandon wants
+   Chauffeur to have its own listing; nothing here prevents it.
+
+2. **`/` is a launch route.** Staff go to Today. A customer who has chosen a
+   line before goes straight back to it; anyone else sees the door. `/choose`
+   always shows the door, and is reached from a pill on Detailing's home and
+   a row in More. Signed out sees the door too: browsing stays public
+   (guideline 5.1.1(iv)).
+
+3. **Detailing kept its paths; only its home moved, to `/detailing`.** The
+   proposal said "everything under `/detailing`". That would have rewritten
+   every link, guard and tour entry, and broken bookmarks and installed
+   copies, for no visible gain. Chauffeur gets `/chauffeur/*`, so
+   `lineForPath()` in `src/core/lines.ts` can still tell the two apart.
+
+4. **The choice is remembered on the device, not the profile.** It is a
+   convenience like the theme (`beezy.line` in platform storage), and a
+   signed-out visitor has one too. **A placeholder line is never
+   remembered**: until Chauffeur's screens exist, choosing it shows a
+   coming-soon page and the next launch shows the door again, rather than
+   dropping the customer onto a dead end every time.
+
+5. **No server-side change yet.** The `business_line` enum, `trips`,
+   `trip_stops`, `fleet_vehicles` and `rate_cards`, with their RLS and
+   tests, arrive with step C3, when the rate card and fleet are known.
+
+**Verified.** Unit tests cover which line a path belongs to and that a
+placeholder or garbled stored value never reopens. The tour adds the door
+signed out, the door signed in, Detailing's home at `/detailing`,
+Chauffeur's placeholder, and an owner opening `/` and landing on Today. It
+passes in both themes, booking flow included.
+
+---
+
 ## Open — Nav labels fail AA over photography
 
 **Date:** 2026-09-14 · **Status:** Open, found by #0017
