@@ -21,21 +21,22 @@ export function Shell() {
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
 
-  const tabs = tabsForRole(role);
-  const groups = moreForRole(role);
+  const line = lineForPath(location.pathname);
+  const tabs = tabsForRole(role, line);
+  const groups = moreForRole(role, line);
 
   // The booking flow owns the full screen: its own footer carries the running
   // total and the next-step button, and a tab bar over that is two competing
   // bottom bars.
   //
-  // The front door and Chauffeur's placeholder have no tabs to offer yet:
-  // the door is a choice, not a place, and Chauffeur has one screen.
+  // Chauffeur's trip builder is the same shape. The front door has no tabs
+  // to offer: it is a choice, not a place.
   const { pathname } = location;
   const immersive =
     pathname.startsWith('/book/') ||
+    pathname.startsWith('/chauffeur/book') ||
     pathname === '/' ||
-    pathname === '/choose' ||
-    lineForPath(pathname) === 'chauffeur';
+    pathname === '/choose';
 
   return (
     <div className="min-h-dvh">

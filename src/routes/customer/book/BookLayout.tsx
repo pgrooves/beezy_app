@@ -91,7 +91,7 @@ export function BookLayout() {
     if (isLast) {
       const id = booking.submitted?.bookingId;
       booking.reset();
-      navigate(id ? `/booking/${id}` : '/', { replace: true });
+      navigate(id ? `/booking/${id}` : '/detailing', { replace: true });
     } else {
       navigate(`/book/${BOOKING_STEPS[index + 1]!.path}`);
     }

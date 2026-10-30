@@ -870,7 +870,7 @@ the request carries a price and no status, and that both photos upload.
 
 ## 0024 — Two lines of business behind one front door
 
-**Date:** 2026-10-30 · **Status:** Active (step C1 built) · No migration
+**Date:** 2026-10-30 · **Status:** Active · No migration · The coming-soon page in 4 became the preview in #0025
 
 **Context.** Beezy is adding a chauffeur service alongside detailing. The
 scope is in the proposal written on 2026-10-30: a customer builds a
@@ -914,6 +914,56 @@ placeholder or garbled stored value never reopens. The tour adds the door
 signed out, the door signed in, Detailing's home at `/detailing`,
 Chauffeur's placeholder, and an owner opening `/` and landing on Today. It
 passes in both themes, booking flow included.
+
+---
+
+## 0025 — Chauffeur ships as a preview on sample rates
+
+**Date:** 2026-10-30 · **Status:** Active (step C2) · No migration
+
+**Context.** Trey asked to see the chauffeur trip builder in the real app,
+not only in the proposal's demo. Rates, vehicles and permits are not known
+yet, so real requests (step C3) cannot be built.
+
+**Decisions.**
+
+1. **The builder works end to end on fixtures.** Trip type, date and time,
+   an itinerary of up to eight stops, passengers and bags, vehicle class,
+   extras, a live estimate and a review with every line explained. The
+   pricing is pure code in `src/core/trips.ts` with unit tests, so C3 moves
+   the numbers into `rate_cards` and an edge function without rewriting the
+   rules.
+
+2. **Every rate is a placeholder, and the screens say so.** Same rule as
+   the shell on fixtures (#0012): a `DemoNote` on Home, Build and Review,
+   and the door labels Chauffeur *Preview*.
+
+3. **Review does not pretend to send.** Its button reads *Requests open
+   soon* and is disabled. A fake *Request sent* would tell a tester Beezy
+   had their trip when it did not. Nothing is saved; a reload starts a
+   fresh draft.
+
+4. **Open signed out.** Nothing is stored or sent, so there is nothing to
+   guard (guideline 5.1.1(iv)). Sign-in will be required at *Request*, as
+   detailing requires it at booking.
+
+5. **Places come from a short list plus typed addresses** until the
+   `places` edge function exists, so no Maps key ships in the public bundle
+   (#0003).
+
+6. **Chauffeur has its own tabs and More**, picked by `lineForPath()` in
+   the shell: Home, Book, Trips, Places. Detailing's plan, invoices and
+   referrals stay out of Chauffeur's More until trips are real. Chauffeur
+   is still never remembered as the launch line (#0024).
+
+**Verified.** 12 unit tests on pricing and trip rules (minimum hours,
+stops included by the hour, flat airport fare doubled for a return, no
+gratuity on extras, every cent itemised, the smallest vehicle that fits,
+after-hours window, past times and missing flights refused). The tour
+screenshots all five Chauffeur screens in both themes and walks a trip: a
+missing flight blocks Review, adding a stop changes the estimate, seven
+passengers moves the vehicle to the Sprinter, Review carries the flight and
+the same total, and its request button is disabled.
 
 ---
 

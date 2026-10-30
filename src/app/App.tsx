@@ -9,7 +9,9 @@ import { BOOKING_STEPS } from './booking';
 import SignIn from '../routes/auth/SignIn';
 import ProfileScreen from '../routes/account/Profile';
 import Home from '../routes/customer/Home';
-import ChauffeurHome from '../routes/chauffeur/Home';
+import ChauffeurHome, { ChauffeurPlaces, ChauffeurTrips } from '../routes/chauffeur/Home';
+import { TripLayout } from '../routes/chauffeur/TripLayout';
+import { StepBuild, StepReview as TripReview } from '../routes/chauffeur/steps';
 import { FrontDoor, Launch } from '../routes/door/FrontDoor';
 import Garage, { VehicleDetail, VehicleForm } from '../routes/customer/Garage';
 import Gallery from '../routes/customer/Gallery';
@@ -77,7 +79,16 @@ export default function App() {
           <Route path="/" element={<Launch />} />
           <Route path="/choose" element={<FrontDoor />} />
           <Route path="/detailing" element={<Home />} />
+          {/* Chauffeur, a preview on sample rates (DECISIONS.md#0025). Open
+              signed out: nothing here is saved or sent until step C3. */}
           <Route path="/chauffeur" element={<ChauffeurHome />} />
+          <Route path="/chauffeur/trips" element={<ChauffeurTrips />} />
+          <Route path="/chauffeur/places" element={<ChauffeurPlaces />} />
+          <Route path="/chauffeur/book" element={<TripLayout />}>
+            <Route index element={<Navigate to="build" replace />} />
+            <Route path="build" element={<StepBuild />} />
+            <Route path="review" element={<TripReview />} />
+          </Route>
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/about" element={<AboutScreen />} />

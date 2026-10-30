@@ -144,6 +144,8 @@ export type IconName =
   | 'schedule'
   | 'jobs'
   | 'clients'
+  | 'trips'
+  | 'places'
   | 'more';
 
 /**
@@ -222,6 +224,21 @@ export function TabIcon({ name, size = 22 }: { name: IconName; size?: number }) 
           <circle cx="9" cy="8.5" r="3.5" />
           <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
           <path d="M16 5.5a3.5 3.5 0 0 1 0 6.6M17.5 14.4A6 6 0 0 1 21 20" />
+        </svg>
+      );
+    case 'trips':
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="6" r="2" />
+          <circle cx="18" cy="18" r="2" />
+          <path d="M8 6h6.5a3 3 0 0 1 0 6h-5a3 3 0 0 0 0 6H16" />
+        </svg>
+      );
+    case 'places':
+      return (
+        <svg {...common}>
+          <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" />
+          <circle cx="12" cy="10" r="2.3" />
         </svg>
       );
     case 'more':

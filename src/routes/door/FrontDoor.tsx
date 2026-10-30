@@ -57,7 +57,7 @@ export function FrontDoor() {
               <div className="px-[var(--space-xl)] py-[var(--space-lg)]">
                 <div className="flex items-center justify-between gap-[var(--space-md)]">
                   <span className="font-display text-[24px] leading-[30px]">{line.label}</span>
-                  {!line.live && <Chip>Coming soon</Chip>}
+                  {!line.live && <Chip>Preview</Chip>}
                 </div>
                 <p className="mt-[var(--space-xs)] text-[14px] leading-[21px] text-[var(--c-ink-muted)]">
                   {line.tagline}

@@ -47,7 +47,12 @@ which version you were on — **include it in every report**.
 email first, then you sign in with a code.
 
 - [ ] The app opens on a choice: **Detailing** or **Chauffeur**. Chauffeur
-      says *Coming soon* and has a way back
+      is marked *Preview*
+- [ ] Chauffeur → **Build a trip**: switch between Point to point, Airport
+      and By the hour; add and remove stops; change passengers and bags and
+      watch too-small vehicles grey out; the estimate changes with every
+      tap. **Review** breaks the price down. *Requests open soon* is
+      expected: nothing is sent yet, and the rates are examples
 - [ ] Pick Detailing, close the app and reopen it: it goes straight to
       Detailing. The **Detailing** pill on Home, or ••• → **Detailing or
       Chauffeur**, brings the choice back

@@ -1,5 +1,6 @@
 import type { IconName } from '../components/nav/GlassTabBar';
 import type { Role } from '../core/types';
+import type { BusinessLine } from '../core/lines';
 
 /**
  * The app's navigation, as data.
@@ -61,6 +62,36 @@ export const CUSTOMER_MORE: { title?: string; links: MoreLink[] }[] = [
     title: 'Settings',
     links: [
       { to: '/settings/notifications', label: 'Notifications' },
+      { to: '/settings/appearance', label: 'Appearance' },
+      { to: '/settings/profile', label: 'Profile & account' },
+    ],
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Customer, Chauffeur (DECISIONS.md#0025)
+// ---------------------------------------------------------------------------
+
+export const CHAUFFEUR_TABS: TabDef[] = [
+  { path: '/chauffeur', label: 'Home', icon: 'home', end: true },
+  { path: '/chauffeur/book', label: 'Book', icon: 'book' },
+  { path: '/chauffeur/trips', label: 'Trips', icon: 'trips' },
+  { path: '/chauffeur/places', label: 'Places', icon: 'places' },
+];
+
+/** Detailing's account rows (plan, invoices, referrals) stay out until trips are real. */
+export const CHAUFFEUR_MORE: { title?: string; links: MoreLink[] }[] = [
+  {
+    title: 'Beezy',
+    links: [
+      { to: '/choose', label: 'Detailing or Chauffeur', detail: 'Switch service' },
+      { to: '/about', label: 'About Beezy' },
+      { to: '/faq', label: 'FAQ' },
+    ],
+  },
+  {
+    title: 'Settings',
+    links: [
       { to: '/settings/appearance', label: 'Appearance' },
       { to: '/settings/profile', label: 'Profile & account' },
     ],
@@ -135,14 +166,20 @@ export const TECH_MORE: { title?: string; links: MoreLink[] }[] = [
 // Resolution
 // ---------------------------------------------------------------------------
 
-export function tabsForRole(role: Role): TabDef[] {
+/**
+ * Role decides the shell; for a customer, the line they are in decides the
+ * tabs within it. Staff see their own shell on every path.
+ */
+export function tabsForRole(role: Role, line: BusinessLine | null = null): TabDef[] {
   if (role === 'tech') return TECH_TABS;
+  if (role === 'customer' && line === 'chauffeur') return CHAUFFEUR_TABS;
   if (role === 'admin' || role === 'owner') return ADMIN_TABS;
   return CUSTOMER_TABS;
 }
 
-export function moreForRole(role: Role): { title?: string; links: MoreLink[] }[] {
+export function moreForRole(role: Role, line: BusinessLine | null = null): { title?: string; links: MoreLink[] }[] {
   if (role === 'tech') return TECH_MORE;
+  if (role === 'customer' && line === 'chauffeur') return CHAUFFEUR_MORE;
   if (role === 'admin' || role === 'owner') return ADMIN_MORE;
   return CUSTOMER_MORE;
 }

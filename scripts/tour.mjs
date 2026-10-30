@@ -30,6 +30,10 @@ const SCREENS = [
   ['door', '/', null],
   ['welcome', '/detailing', null],
   ['chauffeur', '/chauffeur', null],
+  ['chauffeur-build', '/chauffeur/book/build', null],
+  ['chauffeur-review', '/chauffeur/book/review', null],
+  ['chauffeur-trips', '/chauffeur/trips', null],
+  ['chauffeur-places', '/chauffeur/places', null],
   ['sign-in', '/sign-in', null],
   ['gallery-signed-out', '/gallery', null],
   ['about-signed-out', '/about', null],
@@ -240,6 +244,71 @@ try {
 }
 if (flowProblems.length) failures.push({ name: 'booking-flow', problems: flowProblems });
 await bookingContext.close();
+
+// ---------------------------------------------------------------------------
+// Chauffeur trip, walked (DECISIONS.md#0025)
+// ---------------------------------------------------------------------------
+//
+// Fixtures only, so nothing should reach Supabase beyond the session read.
+// What matters is that the rules hold in the browser: a missing flight
+// blocks review, a party that outgrows the vehicle moves it up a class, and
+// the estimate follows every change into Review.
+
+const tripContext = await browser.newContext({
+  viewport: { width: 393, height: 852 },
+  deviceScaleFactor: 2,
+  colorScheme: 'light',
+  isMobile: true,
+  hasTouch: true,
+});
+const tripPage = await tripContext.newPage();
+const tripProblems = [];
+await useFakeSupabase(tripPage, 'customer');
+tripPage.on('pageerror', (e) => tripProblems.push(String(e)));
+const tripShot = (name) => tripPage.screenshot({ path: `${outDir}/${name}.png`, fullPage: true });
+const estimate = async () =>
+  tripPage.locator('footer .money').innerText();
+
+try {
+  await tripPage.goto(`${baseUrl}/chauffeur`, { waitUntil: 'networkidle' });
+  await tripPage.getByRole('button', { name: /^Airport/ }).click();
+  await tripPage.waitForURL(/\/chauffeur\/book\/build$/);
+
+  const review = tripPage.getByRole('button', { name: 'Review' });
+  if (!(await review.isDisabled())) tripProblems.push('Review enabled with no flight number');
+  await tripPage.getByLabel('Flight number').fill('dl 1423');
+
+  const before = await estimate();
+  await tripPage.getByRole('button', { name: 'Add a stop' }).click();
+  await tripPage.getByRole('button', { name: /^Commander/ }).last().click();
+  if ((await estimate()) === before) tripProblems.push('adding a stop did not change the estimate');
+
+  const morePassengers = tripPage.getByRole('button', { name: 'More passengers' });
+  for (let i = 0; i < 5; i++) await morePassengers.click(); // 2 → 7: only the Sprinter seats them
+  if ((await tripPage.getByRole('radio', { checked: true }).innerText()).indexOf('Sprinter') === -1) {
+    tripProblems.push('party of 7 did not move up to the Sprinter');
+  }
+  await tripShot('trip-1-build');
+
+  const total = await estimate();
+  await review.click();
+  await tripPage.waitForURL(/\/chauffeur\/book\/review$/);
+  const text = await tripPage.evaluate(() => document.body.innerText);
+  if (!text.includes('DL 1423')) tripProblems.push('review lost the flight number');
+  if (!text.includes(total)) tripProblems.push(`review total does not match the builder (${total})`);
+  if (!(await tripPage.getByRole('button', { name: /Requests open soon/i }).isDisabled())) {
+    tripProblems.push('review offers a request that cannot be sent');
+  }
+  await tripShot('trip-2-review');
+  console.log(tripProblems.length ? '  FAIL chauffeur trip' : '  ok   chauffeur trip (build → review)');
+  for (const p of tripProblems) console.log(`        ${p}`);
+} catch (err) {
+  tripProblems.push(String(err.message ?? err));
+  console.log('  FAIL chauffeur trip');
+  console.log(`        ${err.message ?? err}`);
+}
+if (tripProblems.length) failures.push({ name: 'chauffeur-trip', problems: tripProblems });
+await tripContext.close();
 
 await browser.close();
 console.log(
